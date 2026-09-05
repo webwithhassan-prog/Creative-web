@@ -28,7 +28,6 @@ export default async function EditCompanyPage({
             address: company.address,
             phone: company.phone,
             email: company.email,
-            notifyEmail: company.notifyEmail,
             logo: company.logo,
           }}
         />

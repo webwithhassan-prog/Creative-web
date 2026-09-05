@@ -16,7 +16,6 @@ const companySchema = z.object({
   address: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().optional(),
-  notifyEmail: z.string().optional(),
 });
 
 function readCompany(formData: FormData) {
@@ -25,7 +24,6 @@ function readCompany(formData: FormData) {
     address: formData.get("address") || undefined,
     phone: formData.get("phone") || undefined,
     email: formData.get("email") || undefined,
-    notifyEmail: formData.get("notifyEmail") || undefined,
   });
 }
 

@@ -10,7 +10,6 @@ type Defaults = {
   address?: string | null;
   phone?: string | null;
   email?: string | null;
-  notifyEmail?: string | null;
   logo?: string | null;
 };
 
@@ -80,20 +79,6 @@ export function CompanyForm({
             name="address"
             defaultValue={defaults?.address ?? ""}
             className={inputClass}
-          />
-        </div>
-
-        <div className="sm:col-span-2">
-          <label className={labelClass} htmlFor="notifyEmail">
-            Low Stock Alert Email
-          </label>
-          <input
-            id="notifyEmail"
-            name="notifyEmail"
-            type="email"
-            defaultValue={defaults?.notifyEmail ?? ""}
-            className={inputClass}
-            placeholder="Where to send low-stock alerts (optional)"
           />
         </div>
 
