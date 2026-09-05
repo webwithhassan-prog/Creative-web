@@ -72,7 +72,8 @@ export default async function PartiesPage({
         </form>
       </div>
 
-      <div className="ledger-sheet overflow-hidden rounded-md">
+      <div className="ledger-sheet rounded-md">
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-rule-strong bg-paper-alt/70 text-left text-xs font-semibold uppercase tracking-wide text-ink-soft">
@@ -122,6 +123,7 @@ export default async function PartiesPage({
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </>
   );

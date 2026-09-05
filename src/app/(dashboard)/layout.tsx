@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { Sidebar } from "@/components/Sidebar";
+import { MobileSidebarShell } from "@/components/MobileSidebarShell";
 
 export default async function DashboardLayout({
   children,
@@ -11,12 +12,14 @@ export default async function DashboardLayout({
   if (!session) redirect("/login");
 
   return (
-    <div className="flex min-h-screen">
-      <div className="no-print contents">
+    <div className="flex min-h-screen flex-col md:flex-row">
+      <MobileSidebarShell>
         <Sidebar session={session} />
-      </div>
-      <div className="ledger-ruled flex-1 overflow-x-hidden bg-paper">
-        <div className="mx-auto max-w-6xl px-6 py-8 md:px-10">{children}</div>
+      </MobileSidebarShell>
+      <div className="ledger-ruled min-w-0 flex-1 overflow-x-hidden bg-paper">
+        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 md:px-10 md:py-8">
+          {children}
+        </div>
       </div>
     </div>
   );

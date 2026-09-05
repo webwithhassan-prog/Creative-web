@@ -116,7 +116,8 @@ export function InvoiceForm({
         </div>
       </div>
 
-      <div className="ledger-sheet overflow-hidden rounded-md">
+      <div className="ledger-sheet rounded-md">
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-rule-strong bg-paper-alt/70 text-left text-xs font-semibold uppercase tracking-wide text-ink-soft">
@@ -207,6 +208,7 @@ export function InvoiceForm({
             </tr>
           </tfoot>
         </table>
+        </div>
         <div className="border-t border-rule-strong px-4 py-3">
           <button
             type="button"
