@@ -15,6 +15,7 @@ const itemSchema = z.object({
 });
 
 const invoiceSchema = z.object({
+  invoiceNo: z.string().min(1, "Invoice number is required"),
   partyId: z.string().min(1, "Select a customer"),
   date: z.string().min(1, "Date is required"),
   notes: z.string().optional(),
@@ -30,6 +31,7 @@ function readInvoice(formData: FormData) {
   }
 
   return invoiceSchema.safeParse({
+    invoiceNo: formData.get("invoiceNo"),
     partyId: formData.get("partyId"),
     date: formData.get("date"),
     notes: formData.get("notes") || undefined,
@@ -55,7 +57,7 @@ export async function createSale(
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
 
   const { active } = await requireActiveCompany();
-  const { partyId, date, notes, items } = parsed.data;
+  const { invoiceNo, partyId, date, notes, items } = parsed.data;
 
   const party = await prisma.party.findUnique({ where: { id: partyId } });
   if (!party || party.companyId !== active.id || party.type !== "CUSTOMER") {
@@ -80,8 +82,14 @@ export async function createSale(
     }
   }
 
+  const existing = await prisma.saleInvoice.findUnique({
+    where: { companyId_invoiceNo: { companyId: active.id, invoiceNo } },
+  });
+  if (existing) {
+    return { error: `Invoice number ${invoiceNo} is already used` };
+  }
+
   const totalAmount = items.reduce((sum, i) => sum + i.quantity * i.rate, 0);
-  const invoiceNo = await nextInvoiceNumber(active.id);
 
   await prisma.$transaction(async (tx) => {
     await tx.saleInvoice.create({

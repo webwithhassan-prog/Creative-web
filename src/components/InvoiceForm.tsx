@@ -77,8 +77,16 @@ export function InvoiceForm({
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
         <div>
-          <label className={labelClass}>Invoice No.</label>
-          <input value={invoiceNo} disabled className={`${inputClass} tabular bg-paper-alt`} />
+          <label className={labelClass} htmlFor="invoiceNo">
+            Invoice No.
+          </label>
+          <input
+            id="invoiceNo"
+            name="invoiceNo"
+            required
+            defaultValue={invoiceNo}
+            className={`${inputClass} tabular`}
+          />
         </div>
         <div>
           <label className={labelClass} htmlFor="date">
