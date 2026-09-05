@@ -9,6 +9,7 @@ import {
   ShoppingCart,
   Receipt,
   Wallet,
+  BookOpen,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -19,6 +20,7 @@ const NAV = [
   { href: "/purchases", label: "Purchases", icon: ShoppingCart },
   { href: "/sales", label: "Sales", icon: Receipt },
   { href: "/payments", label: "Payments", icon: Wallet },
+  { href: "/reports", label: "Reports", icon: BookOpen },
 ];
 
 export function Nav() {

@@ -7,6 +7,7 @@ import { formatMoney } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
 import { btnPrimary, inputClass } from "@/lib/ui";
 import type { PartyType } from "@prisma/client";
+import { requireActiveCompany } from "@/lib/company";
 
 export default async function PartiesPage({
   searchParams,
@@ -15,9 +16,11 @@ export default async function PartiesPage({
 }) {
   const { type, q } = await searchParams;
   const activeType: PartyType = type === "CUSTOMER" ? "CUSTOMER" : "SUPPLIER";
+  const { active } = await requireActiveCompany();
 
   const parties = await prisma.party.findMany({
     where: {
+      companyId: active.id,
       type: activeType,
       ...(q
         ? { name: { contains: q, mode: "insensitive" as const } }
@@ -77,7 +80,7 @@ export default async function PartiesPage({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-rule-strong bg-paper-alt/70 text-left text-xs font-semibold uppercase tracking-wide text-ink-soft">
-              <th className="py-3 pl-14 pr-4">Name</th>
+              <th className="py-3 pl-6 pr-4">Name</th>
               <th className="px-4 py-3">Phone</th>
               <th className="px-4 py-3">Address</th>
               <th className="px-4 py-3 text-right">Balance</th>
@@ -95,7 +98,7 @@ export default async function PartiesPage({
                 const { amount, side } = balanceLabel(closingBalance(party));
                 return (
                   <tr key={party.id} className="transition hover:bg-paper-alt/50">
-                    <td className="py-3 pl-14 pr-4">
+                    <td className="py-3 pl-6 pr-4">
                       <Link
                         href={`/parties/${party.id}`}
                         className="font-medium text-forest-dark hover:underline"

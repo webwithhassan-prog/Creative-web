@@ -20,17 +20,17 @@ export default async function LoginPage({
       <div className="relative w-full max-w-md">
         <div className="mb-8 flex flex-col items-center text-center">
           <div className="brand-monogram flex h-16 w-16 items-center justify-center rounded-full shadow-lg">
-            <span className="font-serif text-2xl font-bold text-forest-dark">CDC</span>
+            <span className="font-serif text-2xl font-bold text-forest-dark">CA</span>
           </div>
           <h1 className="mt-4 font-serif text-2xl font-bold text-paper">
-            Creative Dyes and Chemicals
+            Creative Accounts
           </h1>
           <p className="mt-1 text-sm tracking-wide text-paper/60">
             Ledger &amp; Accounts Register
           </p>
         </div>
 
-        <div className="ledger-sheet rounded-md p-8 pl-14">
+        <div className="ledger-sheet rounded-md p-8 pl-6">
           <h2 className="mb-6 font-serif text-lg font-semibold text-forest-dark">
             Sign in to continue
           </h2>

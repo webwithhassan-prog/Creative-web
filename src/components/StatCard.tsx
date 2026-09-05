@@ -15,7 +15,7 @@ export function StatCard({
   tone?: "neutral" | "good" | "bad";
 }) {
   return (
-    <div className="ledger-sheet rounded-md p-5 pl-14">
+    <div className="ledger-sheet rounded-md p-5 pl-6">
       <div className="flex items-start justify-between">
         <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
           {label}

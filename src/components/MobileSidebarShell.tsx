@@ -26,9 +26,9 @@ export function MobileSidebarShell({ children }: { children: React.ReactNode }) 
           <Menu size={22} />
         </button>
         <div className="brand-monogram flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
-          <span className="font-serif text-xs font-bold text-forest-dark">CDC</span>
+          <span className="font-serif text-xs font-bold text-forest-dark">CA</span>
         </div>
-        <span className="font-serif text-sm font-bold">Creative Dyes and Chemicals</span>
+        <span className="font-serif text-sm font-bold">Creative Accounts</span>
       </header>
 
       {open && (

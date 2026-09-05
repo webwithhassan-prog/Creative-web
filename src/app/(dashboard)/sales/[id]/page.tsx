@@ -5,6 +5,7 @@ import { formatMoney, formatDate, formatQty } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
 import { PrintButton } from "@/components/PrintButton";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
+import { requireActiveCompany } from "@/lib/company";
 import { deleteSale } from "../actions";
 
 export default async function SaleDetailPage({
@@ -13,11 +14,12 @@ export default async function SaleDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const { active } = await requireActiveCompany();
   const invoice = await prisma.saleInvoice.findUnique({
     where: { id },
     include: { party: true, items: { include: { product: true } } },
   });
-  if (!invoice) notFound();
+  if (!invoice || invoice.companyId !== active.id) notFound();
 
   return (
     <>
@@ -31,7 +33,7 @@ export default async function SaleDetailPage({
         }
       />
 
-      <div className="ledger-sheet mb-6 rounded-md p-6 pl-14">
+      <div className="ledger-sheet mb-6 rounded-md p-6 pl-6">
         <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
           Customer
         </p>
@@ -51,7 +53,7 @@ export default async function SaleDetailPage({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-rule-strong bg-paper-alt/70 text-left text-xs font-semibold uppercase tracking-wide text-ink-soft">
-              <th className="py-3 pl-14 pr-4">Product</th>
+              <th className="py-3 pl-6 pr-4">Product</th>
               <th className="px-4 py-3 text-right">Quantity</th>
               <th className="px-4 py-3 text-right">Rate</th>
               <th className="px-4 py-3 text-right">Amount</th>
@@ -60,7 +62,7 @@ export default async function SaleDetailPage({
           <tbody className="divide-y divide-rule">
             {invoice.items.map((item) => (
               <tr key={item.id}>
-                <td className="py-3 pl-14 pr-4 text-ink">{item.product.name}</td>
+                <td className="py-3 pl-6 pr-4 text-ink">{item.product.name}</td>
                 <td className="tabular px-4 py-3 text-right">
                   {formatQty(item.quantity)} {item.product.unit}
                 </td>
@@ -73,7 +75,7 @@ export default async function SaleDetailPage({
           </tbody>
           <tfoot>
             <tr className="border-t-2 border-rule-strong bg-paper-alt/70">
-              <td colSpan={3} className="py-3 pl-14 pr-4 text-right font-semibold">
+              <td colSpan={3} className="py-3 pl-6 pr-4 text-right font-semibold">
                 Total
               </td>
               <td className="tabular px-4 py-3 text-right font-serif text-lg font-bold text-forest-dark">

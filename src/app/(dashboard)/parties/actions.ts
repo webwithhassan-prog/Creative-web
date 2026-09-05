@@ -4,6 +4,7 @@ import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { requireActiveCompany } from "@/lib/company";
 
 export type FormState = { error?: string };
 
@@ -40,7 +41,10 @@ export async function createParty(
   const parsed = readParty(formData);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
 
-  const party = await prisma.party.create({ data: parsed.data });
+  const { active } = await requireActiveCompany();
+  const party = await prisma.party.create({
+    data: { ...parsed.data, companyId: active.id },
+  });
   revalidatePath("/parties");
   redirect(`/parties/${party.id}`);
 }
@@ -53,7 +57,13 @@ export async function updateParty(
   const parsed = readParty(formData);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
 
-  await prisma.party.update({ where: { id }, data: parsed.data });
+  const { active } = await requireActiveCompany();
+  const result = await prisma.party.updateMany({
+    where: { id, companyId: active.id },
+    data: parsed.data,
+  });
+  if (result.count === 0) return { error: "Account not found" };
+
   revalidatePath("/parties");
   revalidatePath(`/parties/${id}`);
   redirect(`/parties/${id}`);
@@ -61,6 +71,7 @@ export async function updateParty(
 
 export async function deleteParty(formData: FormData) {
   const id = formData.get("id") as string;
+  const { active } = await requireActiveCompany();
 
   const [purchases, sales, payments] = await Promise.all([
     prisma.purchaseInvoice.count({ where: { partyId: id } }),
@@ -72,13 +83,17 @@ export async function deleteParty(formData: FormData) {
     redirect(`/parties/${id}?error=has-history`);
   }
 
-  await prisma.party.delete({ where: { id } });
+  await prisma.party.deleteMany({ where: { id, companyId: active.id } });
   revalidatePath("/parties");
   redirect("/parties");
 }
 
 export async function setPartyActive(id: string, isActive: boolean) {
-  await prisma.party.update({ where: { id }, data: { isActive } });
+  const { active } = await requireActiveCompany();
+  await prisma.party.updateMany({
+    where: { id, companyId: active.id },
+    data: { isActive },
+  });
   revalidatePath("/parties");
   revalidatePath(`/parties/${id}`);
 }

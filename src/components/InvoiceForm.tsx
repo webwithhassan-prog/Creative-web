@@ -121,7 +121,7 @@ export function InvoiceForm({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-rule-strong bg-paper-alt/70 text-left text-xs font-semibold uppercase tracking-wide text-ink-soft">
-              <th className="py-3 pl-14 pr-4">Product</th>
+              <th className="py-3 pl-6 pr-4">Product</th>
               <th className="px-4 py-3 text-right">Quantity</th>
               <th className="px-4 py-3">Unit</th>
               <th className="px-4 py-3 text-right">Rate</th>
@@ -135,7 +135,7 @@ export function InvoiceForm({
               const amount = (Number(row.quantity) || 0) * (Number(row.rate) || 0);
               return (
                 <tr key={row.key}>
-                  <td className="py-2 pl-14 pr-4">
+                  <td className="py-2 pl-6 pr-4">
                     <select
                       value={row.productId}
                       onChange={(e) => updateRow(row.key, { productId: e.target.value })}
@@ -198,7 +198,7 @@ export function InvoiceForm({
           </tbody>
           <tfoot>
             <tr className="border-t-2 border-rule-strong bg-paper-alt/70">
-              <td colSpan={4} className="py-3 pl-14 pr-4 text-right font-semibold text-ink">
+              <td colSpan={4} className="py-3 pl-6 pr-4 text-right font-semibold text-ink">
                 Total
               </td>
               <td className="tabular px-4 py-3 text-right font-serif text-lg font-bold text-forest-dark">

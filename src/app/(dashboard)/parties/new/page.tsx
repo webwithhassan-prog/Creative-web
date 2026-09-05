@@ -17,7 +17,7 @@ export default async function NewPartyPage({
         title={`Add ${lockType === "SUPPLIER" ? "Supplier" : "Customer"}`}
         subtitle="Create a new ledger account"
       />
-      <div className="ledger-sheet max-w-2xl rounded-md p-6 pl-14">
+      <div className="ledger-sheet max-w-2xl rounded-md p-6 pl-6">
         <PartyForm action={createParty} submitLabel="Create Account" lockType={lockType} />
       </div>
     </>

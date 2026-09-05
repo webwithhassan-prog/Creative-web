@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { formatQty, formatMoney } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
 import { btnPrimary } from "@/lib/ui";
+import { requireActiveCompany } from "@/lib/company";
 
 export default async function ProductsPage({
   searchParams,
@@ -12,7 +13,11 @@ export default async function ProductsPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
-  const products = await prisma.product.findMany({ orderBy: { name: "asc" } });
+  const { active } = await requireActiveCompany();
+  const products = await prisma.product.findMany({
+    where: { companyId: active.id },
+    orderBy: { name: "asc" },
+  });
 
   return (
     <>
@@ -37,7 +42,7 @@ export default async function ProductsPage({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-rule-strong bg-paper-alt/70 text-left text-xs font-semibold uppercase tracking-wide text-ink-soft">
-              <th className="py-3 pl-14 pr-4">Product</th>
+              <th className="py-3 pl-6 pr-4">Product</th>
               <th className="px-4 py-3">SKU</th>
               <th className="px-4 py-3 text-right">Stock</th>
               <th className="px-4 py-3 text-right">Reorder Level</th>
@@ -58,7 +63,7 @@ export default async function ProductsPage({
                 const low = Number(p.currentStock) <= Number(p.reorderLevel);
                 return (
                   <tr key={p.id} className="transition hover:bg-paper-alt/50">
-                    <td className="py-3 pl-14 pr-4 font-medium text-ink">{p.name}</td>
+                    <td className="py-3 pl-6 pr-4 font-medium text-ink">{p.name}</td>
                     <td className="px-4 py-3 text-ink-soft">{p.sku || "—"}</td>
                     <td
                       className={clsx(

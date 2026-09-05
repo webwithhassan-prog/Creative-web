@@ -6,10 +6,13 @@ import { formatMoney, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { btnPrimary } from "@/lib/ui";
+import { requireActiveCompany } from "@/lib/company";
 import { deletePayment } from "./actions";
 
 export default async function PaymentsPage() {
+  const { active } = await requireActiveCompany();
   const payments = await prisma.payment.findMany({
+    where: { companyId: active.id },
     include: { party: true },
     orderBy: { date: "desc" },
   });
@@ -31,7 +34,7 @@ export default async function PaymentsPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-rule-strong bg-paper-alt/70 text-left text-xs font-semibold uppercase tracking-wide text-ink-soft">
-              <th className="py-3 pl-14 pr-4">Date</th>
+              <th className="py-3 pl-6 pr-4">Date</th>
               <th className="px-4 py-3">Account</th>
               <th className="px-4 py-3">Direction</th>
               <th className="px-4 py-3">Method</th>
@@ -50,7 +53,7 @@ export default async function PaymentsPage() {
             ) : (
               payments.map((p) => (
                 <tr key={p.id} className="transition hover:bg-paper-alt/50">
-                  <td className="whitespace-nowrap py-3 pl-14 pr-4 text-ink-soft">
+                  <td className="whitespace-nowrap py-3 pl-6 pr-4 text-ink-soft">
                     {formatDate(p.date)}
                   </td>
                   <td className="px-4 py-3">

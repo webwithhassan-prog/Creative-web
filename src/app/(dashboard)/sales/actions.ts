@@ -4,6 +4,7 @@ import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { requireActiveCompany } from "@/lib/company";
 
 export type FormState = { error?: string };
 
@@ -36,13 +37,14 @@ function readInvoice(formData: FormData) {
   });
 }
 
-async function nextInvoiceNumber() {
-  const count = await prisma.saleInvoice.count();
+async function nextInvoiceNumber(companyId: string) {
+  const count = await prisma.saleInvoice.count({ where: { companyId } });
   return `SALE-${String(count + 1).padStart(4, "0")}`;
 }
 
 export async function getNextSaleInvoiceNo() {
-  return nextInvoiceNumber();
+  const { active } = await requireActiveCompany();
+  return nextInvoiceNumber(active.id);
 }
 
 export async function createSale(
@@ -52,15 +54,16 @@ export async function createSale(
   const parsed = readInvoice(formData);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
 
+  const { active } = await requireActiveCompany();
   const { partyId, date, notes, items } = parsed.data;
 
   const party = await prisma.party.findUnique({ where: { id: partyId } });
-  if (!party || party.type !== "CUSTOMER") {
+  if (!party || party.companyId !== active.id || party.type !== "CUSTOMER") {
     return { error: "Selected party is not a customer" };
   }
 
   const products = await prisma.product.findMany({
-    where: { id: { in: items.map((i) => i.productId) } },
+    where: { id: { in: items.map((i) => i.productId) }, companyId: active.id },
   });
   if (products.length !== new Set(items.map((i) => i.productId)).size) {
     return { error: "One or more selected products could not be found" };
@@ -78,11 +81,12 @@ export async function createSale(
   }
 
   const totalAmount = items.reduce((sum, i) => sum + i.quantity * i.rate, 0);
-  const invoiceNo = await nextInvoiceNumber();
+  const invoiceNo = await nextInvoiceNumber(active.id);
 
   await prisma.$transaction(async (tx) => {
     await tx.saleInvoice.create({
       data: {
+        companyId: active.id,
         invoiceNo,
         date: new Date(date),
         partyId,
@@ -118,15 +122,16 @@ export async function createSale(
 
 export async function deleteSale(formData: FormData) {
   const id = formData.get("id") as string;
+  const { active } = await requireActiveCompany();
 
   const invoice = await prisma.saleInvoice.findUnique({
     where: { id },
     include: { items: true },
   });
-  if (!invoice) redirect("/sales");
+  if (!invoice || invoice.companyId !== active.id) redirect("/sales");
 
   await prisma.$transaction(async (tx) => {
-    for (const item of invoice!.items) {
+    for (const item of invoice.items) {
       await tx.product.update({
         where: { id: item.productId },
         data: { currentStock: { increment: item.quantity } },
@@ -137,6 +142,6 @@ export async function deleteSale(formData: FormData) {
 
   revalidatePath("/sales");
   revalidatePath("/products");
-  revalidatePath(`/parties/${invoice!.partyId}`);
+  revalidatePath(`/parties/${invoice.partyId}`);
   redirect("/sales");
 }

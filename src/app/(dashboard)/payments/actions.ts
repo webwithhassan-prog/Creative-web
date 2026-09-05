@@ -4,6 +4,7 @@ import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { requireActiveCompany } from "@/lib/company";
 
 export type FormState = { error?: string };
 
@@ -32,10 +33,17 @@ export async function createPayment(
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
 
+  const { active } = await requireActiveCompany();
   const { partyId, date, amount, direction, method, reference, notes } = parsed.data;
+
+  const party = await prisma.party.findUnique({ where: { id: partyId } });
+  if (!party || party.companyId !== active.id) {
+    return { error: "Selected account could not be found" };
+  }
 
   await prisma.payment.create({
     data: {
+      companyId: active.id,
       partyId,
       date: new Date(date),
       amount,
@@ -53,11 +61,13 @@ export async function createPayment(
 
 export async function deletePayment(formData: FormData) {
   const id = formData.get("id") as string;
+  const { active } = await requireActiveCompany();
+
   const payment = await prisma.payment.findUnique({ where: { id } });
-  if (!payment) redirect("/payments");
+  if (!payment || payment.companyId !== active.id) redirect("/payments");
 
   await prisma.payment.delete({ where: { id } });
   revalidatePath("/payments");
-  revalidatePath(`/parties/${payment!.partyId}`);
+  revalidatePath(`/parties/${payment.partyId}`);
   redirect("/payments");
 }

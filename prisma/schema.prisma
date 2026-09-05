@@ -30,8 +30,26 @@ model Admin {
   createdAt    DateTime @default(now())
 }
 
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  address   String?
+  phone     String?
+  email     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parties          Party[]
+  products         Product[]
+  purchaseInvoices PurchaseInvoice[]
+  saleInvoices     SaleInvoice[]
+  payments         Payment[]
+}
+
 model Party {
   id                 String      @id @default(cuid())
+  companyId          String
+  company            Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
   name               String
   type               PartyType
   phone              String?
@@ -49,13 +67,15 @@ model Party {
   saleInvoices     SaleInvoice[]
   payments         Payment[]
 
-  @@index([type])
+  @@index([companyId, type])
 }
 
 model Product {
   id               String   @id @default(cuid())
+  companyId        String
+  company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   name             String
-  sku              String?  @unique
+  sku              String?
   unit             String   @default("kg")
   currentStock     Decimal  @default(0) @db.Decimal(14, 3)
   reorderLevel     Decimal  @default(0) @db.Decimal(14, 3)
@@ -67,11 +87,16 @@ model Product {
 
   purchaseItems PurchaseItem[]
   saleItems     SaleItem[]
+
+  @@unique([companyId, sku])
+  @@index([companyId])
 }
 
 model PurchaseInvoice {
   id          String         @id @default(cuid())
-  invoiceNo   String         @unique
+  companyId   String
+  company     Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invoiceNo   String
   date        DateTime
   partyId     String
   party       Party          @relation(fields: [partyId], references: [id])
@@ -80,6 +105,8 @@ model PurchaseInvoice {
   notes       String?
   createdAt   DateTime       @default(now())
 
+  @@unique([companyId, invoiceNo])
+  @@index([companyId, date])
   @@index([partyId])
 }
 
@@ -98,7 +125,9 @@ model PurchaseItem {
 
 model SaleInvoice {
   id          String     @id @default(cuid())
-  invoiceNo   String     @unique
+  companyId   String
+  company     Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invoiceNo   String
   date        DateTime
   partyId     String
   party       Party      @relation(fields: [partyId], references: [id])
@@ -107,6 +136,8 @@ model SaleInvoice {
   notes       String?
   createdAt   DateTime   @default(now())
 
+  @@unique([companyId, invoiceNo])
+  @@index([companyId, date])
   @@index([partyId])
 }
 
@@ -125,6 +156,8 @@ model SaleItem {
 
 model Payment {
   id        String           @id @default(cuid())
+  companyId String
+  company   Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
   partyId   String
   party     Party            @relation(fields: [partyId], references: [id])
   date      DateTime
@@ -135,5 +168,6 @@ model Payment {
   notes     String?
   createdAt DateTime         @default(now())
 
+  @@index([companyId, date])
   @@index([partyId])
 }

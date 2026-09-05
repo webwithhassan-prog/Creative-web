@@ -13,4 +13,4 @@ export const btnSecondary =
 export const btnDanger =
   "inline-flex items-center justify-center gap-2 rounded-sm border border-maroon/30 bg-paper px-3 py-1.5 text-xs font-semibold text-maroon transition hover:bg-maroon/10 disabled:opacity-50";
 
-export const cardClass = "ledger-sheet rounded-md p-6 pl-14";
+export const cardClass = "ledger-sheet rounded-md p-6 pl-6";

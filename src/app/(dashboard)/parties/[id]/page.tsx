@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { PrintButton } from "@/components/PrintButton";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { btnPrimary, btnSecondary } from "@/lib/ui";
+import { requireActiveCompany } from "@/lib/company";
 import { deleteParty } from "../actions";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -27,6 +28,7 @@ export default async function PartyLedgerPage({
 }) {
   const { id } = await params;
   const { error } = await searchParams;
+  const { active } = await requireActiveCompany();
 
   const party = await prisma.party.findUnique({
     where: { id },
@@ -36,7 +38,7 @@ export default async function PartyLedgerPage({
       payments: true,
     },
   });
-  if (!party) notFound();
+  if (!party || party.companyId !== active.id) notFound();
 
   const rows = buildPartyLedger(party);
   const closing = rows.length ? rows[rows.length - 1].balance : 0;
@@ -81,7 +83,7 @@ export default async function PartyLedgerPage({
       )}
 
       <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-3">
-        <div className="ledger-sheet rounded-md p-6 pl-14 md:col-span-2">
+        <div className="ledger-sheet rounded-md p-6 pl-6 md:col-span-2">
           <h2 className="mb-3 font-serif text-sm font-semibold uppercase tracking-wide text-ink-soft">
             Account Details
           </h2>
@@ -97,7 +99,7 @@ export default async function PartyLedgerPage({
           </dl>
         </div>
 
-        <div className="ledger-sheet flex flex-col justify-center rounded-md p-6 pl-14">
+        <div className="ledger-sheet flex flex-col justify-center rounded-md p-6 pl-6">
           <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
             Current Balance
           </p>
@@ -119,7 +121,7 @@ export default async function PartyLedgerPage({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-rule-strong bg-paper-alt/70 text-left text-xs font-semibold uppercase tracking-wide text-ink-soft">
-              <th className="py-3 pl-14 pr-4">Date</th>
+              <th className="py-3 pl-6 pr-4">Date</th>
               <th className="px-4 py-3">Particulars</th>
               <th className="px-4 py-3">Ref</th>
               <th className="px-4 py-3 text-right">Debit</th>
@@ -139,7 +141,7 @@ export default async function PartyLedgerPage({
                 const rowBalance = balanceLabel(row.balance);
                 return (
                   <tr key={row.id} className="transition hover:bg-paper-alt/50">
-                    <td className="whitespace-nowrap py-3 pl-14 pr-4 text-ink-soft">
+                    <td className="whitespace-nowrap py-3 pl-6 pr-4 text-ink-soft">
                       {formatDate(row.date)}
                     </td>
                     <td className="px-4 py-3 text-ink">
@@ -167,7 +169,7 @@ export default async function PartyLedgerPage({
           {rows.length > 0 && (
             <tfoot>
               <tr className="border-t-2 border-rule-strong bg-paper-alt/70 font-semibold">
-                <td colSpan={3} className="py-3 pl-14 pr-4 text-ink">
+                <td colSpan={3} className="py-3 pl-6 pr-4 text-ink">
                   Total
                 </td>
                 <td className="tabular px-4 py-3 text-right">{formatMoney(totalDebit)}</td>

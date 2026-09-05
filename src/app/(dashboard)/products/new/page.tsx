@@ -6,7 +6,7 @@ export default function NewProductPage() {
   return (
     <>
       <PageHeader title="Add Product" subtitle="Add a new item to inventory" />
-      <div className="ledger-sheet max-w-xl rounded-md p-6 pl-14">
+      <div className="ledger-sheet max-w-xl rounded-md p-6 pl-6">
         <ProductForm action={createProduct} submitLabel="Create Product" />
       </div>
     </>

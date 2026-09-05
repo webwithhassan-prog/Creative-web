@@ -5,25 +5,33 @@ import { closingBalance, balanceLabel } from "@/lib/ledger";
 import { formatMoney, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
 import { StatCard } from "@/components/StatCard";
+import { requireActiveCompany } from "@/lib/company";
 
 export default async function DashboardPage() {
+  const { active } = await requireActiveCompany();
+  const companyId = active.id;
+
   const [parties, products, recentPurchases, recentSales, recentPayments] =
     await Promise.all([
       prisma.party.findMany({
+        where: { companyId },
         include: { purchaseInvoices: true, saleInvoices: true, payments: true },
       }),
-      prisma.product.findMany({ orderBy: { name: "asc" } }),
+      prisma.product.findMany({ where: { companyId }, orderBy: { name: "asc" } }),
       prisma.purchaseInvoice.findMany({
+        where: { companyId },
         include: { party: true },
         orderBy: { date: "desc" },
         take: 5,
       }),
       prisma.saleInvoice.findMany({
+        where: { companyId },
         include: { party: true },
         orderBy: { date: "desc" },
         take: 5,
       }),
       prisma.payment.findMany({
+        where: { companyId },
         include: { party: true },
         orderBy: { date: "desc" },
         take: 5,
@@ -117,7 +125,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-5">
-        <div className="ledger-sheet rounded-md p-6 pl-14 lg:col-span-3">
+        <div className="ledger-sheet rounded-md p-6 pl-6 lg:col-span-3">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-serif text-lg font-semibold text-forest-dark">
               Recent Activity
@@ -157,7 +165,7 @@ export default async function DashboardPage() {
           )}
         </div>
 
-        <div className="ledger-sheet rounded-md p-6 pl-14 lg:col-span-2">
+        <div className="ledger-sheet rounded-md p-6 pl-6 lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-serif text-lg font-semibold text-forest-dark">
               Low Stock

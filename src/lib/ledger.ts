@@ -110,6 +110,14 @@ export function closingBalance(party: PartyWithHistory): number {
   return rows.length ? rows[rows.length - 1].balance : 0;
 }
 
+/** Running balance as of the end of a given date (inclusive). */
+export function closingBalanceAsOf(party: PartyWithHistory, asOfDate: Date): number {
+  const cutoff = new Date(asOfDate);
+  cutoff.setHours(23, 59, 59, 999);
+  const rows = buildPartyLedger(party).filter((r) => r.date.getTime() <= cutoff.getTime());
+  return rows.length ? rows[rows.length - 1].balance : 0;
+}
+
 export function balanceLabel(balance: number): { amount: number; side: "Dr" | "Cr" } {
   return balance >= 0
     ? { amount: balance, side: "Dr" }

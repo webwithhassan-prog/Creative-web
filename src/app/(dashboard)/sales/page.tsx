@@ -4,9 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { formatMoney, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
 import { btnPrimary } from "@/lib/ui";
+import { requireActiveCompany } from "@/lib/company";
 
 export default async function SalesPage() {
+  const { active } = await requireActiveCompany();
   const invoices = await prisma.saleInvoice.findMany({
+    where: { companyId: active.id },
     include: { party: true },
     orderBy: { date: "desc" },
   });
@@ -28,7 +31,7 @@ export default async function SalesPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-rule-strong bg-paper-alt/70 text-left text-xs font-semibold uppercase tracking-wide text-ink-soft">
-              <th className="py-3 pl-14 pr-4">Invoice</th>
+              <th className="py-3 pl-6 pr-4">Invoice</th>
               <th className="px-4 py-3">Date</th>
               <th className="px-4 py-3">Customer</th>
               <th className="px-4 py-3 text-right">Amount</th>
@@ -44,7 +47,7 @@ export default async function SalesPage() {
             ) : (
               invoices.map((inv) => (
                 <tr key={inv.id} className="transition hover:bg-paper-alt/50">
-                  <td className="py-3 pl-14 pr-4">
+                  <td className="py-3 pl-6 pr-4">
                     <Link
                       href={`/sales/${inv.id}`}
                       className="tabular font-medium text-forest-dark hover:underline"

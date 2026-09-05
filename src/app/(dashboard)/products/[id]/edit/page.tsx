@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/PageHeader";
 import { ProductForm } from "@/components/ProductForm";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
+import { requireActiveCompany } from "@/lib/company";
 import { updateProduct, deleteProduct } from "../../actions";
 
 export default async function EditProductPage({
@@ -11,15 +12,16 @@ export default async function EditProductPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const { active } = await requireActiveCompany();
   const product = await prisma.product.findUnique({ where: { id } });
-  if (!product) notFound();
+  if (!product || product.companyId !== active.id) notFound();
 
   const boundUpdate = updateProduct.bind(null, id);
 
   return (
     <>
       <PageHeader title={`Edit ${product.name}`} subtitle="Update product details" />
-      <div className="ledger-sheet max-w-xl rounded-md p-6 pl-14">
+      <div className="ledger-sheet max-w-xl rounded-md p-6 pl-6">
         <ProductForm
           action={boundUpdate}
           submitLabel="Save Changes"

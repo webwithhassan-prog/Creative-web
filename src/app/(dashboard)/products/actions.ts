@@ -4,6 +4,7 @@ import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { requireActiveCompany } from "@/lib/company";
 
 export type FormState = { error?: string };
 
@@ -32,8 +33,9 @@ export async function createProduct(
   const parsed = readProduct(formData);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
 
+  const { active } = await requireActiveCompany();
   try {
-    await prisma.product.create({ data: parsed.data });
+    await prisma.product.create({ data: { ...parsed.data, companyId: active.id } });
   } catch {
     return { error: "A product with that SKU already exists." };
   }
@@ -49,8 +51,13 @@ export async function updateProduct(
   const parsed = readProduct(formData);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
 
+  const { active } = await requireActiveCompany();
   try {
-    await prisma.product.update({ where: { id }, data: parsed.data });
+    const result = await prisma.product.updateMany({
+      where: { id, companyId: active.id },
+      data: parsed.data,
+    });
+    if (result.count === 0) return { error: "Product not found" };
   } catch {
     return { error: "A product with that SKU already exists." };
   }
@@ -60,6 +67,7 @@ export async function updateProduct(
 
 export async function deleteProduct(formData: FormData) {
   const id = formData.get("id") as string;
+  const { active } = await requireActiveCompany();
 
   const [purchases, sales] = await Promise.all([
     prisma.purchaseItem.count({ where: { productId: id } }),
@@ -70,7 +78,7 @@ export async function deleteProduct(formData: FormData) {
     redirect(`/products?error=has-history`);
   }
 
-  await prisma.product.delete({ where: { id } });
+  await prisma.product.deleteMany({ where: { id, companyId: active.id } });
   revalidatePath("/products");
   redirect("/products");
 }
