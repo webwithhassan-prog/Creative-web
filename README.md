@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Creative Dyes and Chemicals — Ledger
 
-## Getting Started
+A ledger and accounts register for Creative Dyes and Chemicals: supplier and
+customer accounts, purchase and sale entries, payments, and stock/inventory
+tracking, built with Next.js (App Router) and PostgreSQL.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 (App Router, TypeScript, Tailwind CSS v4)
+- PostgreSQL via Prisma ORM 6
+- Single-admin login (hashed password, signed session cookie — no third-party
+  auth provider)
+
+## 1. Get a database
+
+Any PostgreSQL database works. The free tier of [Neon](https://neon.tech) or
+[Supabase](https://supabase.com) is enough for this app. Create a project
+there and copy its connection string.
+
+## 2. Configure environment variables
+
+Copy `.env.example` to `.env` and fill in:
+
+```bash
+cp .env.example .env
+```
+
+- `DATABASE_URL` — your Postgres connection string
+- `SESSION_SECRET` — a long random string (`openssl rand -base64 32`)
+- `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_NAME` — used once to create the
+  admin login (see step 4)
+
+## 3. Install dependencies & create the schema
+
+```bash
+npm install
+npm run db:push
+```
+
+`db:push` creates all the tables (`Party`, `Product`, `PurchaseInvoice`,
+`SaleInvoice`, `Payment`, `Admin`, …) in your database.
+
+## 4. Create the admin login
+
+```bash
+npm run db:seed
+```
+
+This reads `ADMIN_EMAIL` / `ADMIN_PASSWORD` from `.env` and creates the admin
+account you'll log in with. Re-run it any time to reset the password.
+
+## 5. Run it
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) and sign in.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deploying (Vercel)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Push this repo to GitHub and import it into [Vercel](https://vercel.com/new).
+2. Add the same environment variables from `.env` in the Vercel project
+   settings.
+3. Deploy. Vercel runs `npm run build`, which also runs `prisma generate`.
+4. Run the schema push and seed once against the production database — either
+   locally with `DATABASE_URL` pointed at production, or via `vercel env pull`
+   then `npm run db:push && npm run db:seed`.
 
-## Learn More
+## How the ledgers work
 
-To learn more about Next.js, take a look at the following resources:
+Every supplier and customer is a **Party** with a running balance, shown as
+**Dr** (money owed *to* the business) or **Cr** (money the business owes),
+exactly like a traditional ledger book:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- A **purchase** invoice credits the supplier's account and increases stock.
+- A **sale** invoice debits the customer's account and decreases stock.
+- A **payment** made to a supplier debits their account; a payment received
+  from a customer credits theirs.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The Dashboard totals "Receivable" (customers in Dr) and "Payable" (suppliers
+in Cr) across all accounts. Each party's page has a full statement with a
+running balance and a print-friendly view.
 
-## Deploy on Vercel
+## Useful scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Command             | What it does                                  |
+| -------------------- | --------------------------------------------- |
+| `npm run dev`         | Start the dev server                          |
+| `npm run build`       | Production build                              |
+| `npm run db:push`     | Sync the Prisma schema to the database         |
+| `npm run db:migrate`  | Create a versioned migration (for prod changes)|
+| `npm run db:seed`     | Create/update the admin login                  |
+| `npm run db:studio`   | Open Prisma Studio to browse data              |

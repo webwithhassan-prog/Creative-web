@@ -1,26 +1,120 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #211d15;
+  --ink-soft: #4a4438;
+  --paper: #faf6ec;
+  --paper-alt: #f2ead4;
+  --paper-deep: #e9dfc0;
+  --forest: #123524;
+  --forest-dark: #0a2318;
+  --forest-light: #1e5039;
+  --gold: #b0862c;
+  --gold-bright: #d4a94a;
+  --maroon: #7c2b28;
+  --maroon-light: #a53f3a;
+  --rule: #cabf9c;
+  --rule-strong: #a99a6c;
+  --rule-red: #b5555a;
+  --shadow: 20 16% 20%;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-paper: var(--paper);
+  --color-paper-alt: var(--paper-alt);
+  --color-paper-deep: var(--paper-deep);
+  --color-forest: var(--forest);
+  --color-forest-dark: var(--forest-dark);
+  --color-forest-light: var(--forest-light);
+  --color-gold: var(--gold);
+  --color-gold-bright: var(--gold-bright);
+  --color-maroon: var(--maroon);
+  --color-maroon-light: var(--maroon-light);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-rule-red: var(--rule-red);
+  --font-serif: var(--font-display);
+  --font-mono: var(--font-ledger-mono);
+  --font-sans: var(--font-body);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Ruled ledger paper: faint horizontal lines like a physical account book */
+.ledger-ruled {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 43px,
+    var(--rule) 43px,
+    var(--rule) 44px
+  );
+  background-position: 0 2px;
+}
+
+.ledger-ruled > * {
+  min-height: 44px;
+}
+
+/* Classic ledger sheet: cream paper, red double margin rule on the left */
+.ledger-sheet {
+  position: relative;
+  background: var(--paper);
+  border: 1px solid var(--rule-strong);
+  box-shadow: 0 1px 2px hsl(var(--shadow) / 0.06), 0 6px 16px hsl(var(--shadow) / 0.08);
+}
+
+.ledger-sheet::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 46px;
+  width: 1px;
+  background: var(--rule-red);
+  opacity: 0.55;
+}
+
+.ledger-sheet::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 49px;
+  width: 1px;
+  background: var(--rule-red);
+  opacity: 0.3;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.brand-monogram {
+  background: linear-gradient(155deg, var(--gold-bright), var(--gold) 55%, #8a6a1f 100%);
+}
+
+::selection {
+  background: var(--gold-bright);
+  color: var(--forest-dark);
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+  .ledger-sheet {
+    box-shadow: none !important;
+    border-color: #999 !important;
+  }
 }
