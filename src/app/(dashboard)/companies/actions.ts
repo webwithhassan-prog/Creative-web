@@ -8,11 +8,15 @@ import { setActiveCompanyCookie } from "@/lib/company";
 
 export type FormState = { error?: string };
 
+const MAX_LOGO_BYTES = 1.5 * 1024 * 1024; // 1.5MB
+const ALLOWED_LOGO_TYPES = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
+
 const companySchema = z.object({
   name: z.string().min(1, "Company name is required"),
   address: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().optional(),
+  notifyEmail: z.string().optional(),
 });
 
 function readCompany(formData: FormData) {
@@ -21,7 +25,32 @@ function readCompany(formData: FormData) {
     address: formData.get("address") || undefined,
     phone: formData.get("phone") || undefined,
     email: formData.get("email") || undefined,
+    notifyEmail: formData.get("notifyEmail") || undefined,
   });
+}
+
+/** Returns a data-URL string to save, `null` to clear the logo, or `undefined` to leave it untouched. */
+async function readLogo(formData: FormData): Promise<
+  { value: string | null | undefined } | { error: string }
+> {
+  if (formData.get("removeLogo") === "1") {
+    return { value: null };
+  }
+
+  const file = formData.get("logo");
+  if (!(file instanceof File) || file.size === 0) {
+    return { value: undefined };
+  }
+
+  if (file.size > MAX_LOGO_BYTES) {
+    return { error: "Logo must be smaller than 1.5MB" };
+  }
+  if (!ALLOWED_LOGO_TYPES.includes(file.type)) {
+    return { error: "Logo must be a PNG, JPEG, WebP or SVG image" };
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  return { value: `data:${file.type};base64,${buffer.toString("base64")}` };
 }
 
 export async function createCompany(
@@ -31,7 +60,12 @@ export async function createCompany(
   const parsed = readCompany(formData);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
 
-  const company = await prisma.company.create({ data: parsed.data });
+  const logo = await readLogo(formData);
+  if ("error" in logo) return { error: logo.error };
+
+  const company = await prisma.company.create({
+    data: { ...parsed.data, logo: logo.value ?? undefined },
+  });
   await setActiveCompanyCookie(company.id);
   revalidatePath("/", "layout");
   redirect("/");
@@ -45,7 +79,13 @@ export async function updateCompany(
   const parsed = readCompany(formData);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
 
-  await prisma.company.update({ where: { id }, data: parsed.data });
+  const logo = await readLogo(formData);
+  if ("error" in logo) return { error: logo.error };
+
+  await prisma.company.update({
+    where: { id },
+    data: { ...parsed.data, ...(logo.value !== undefined ? { logo: logo.value } : {}) },
+  });
   revalidatePath("/", "layout");
   redirect("/companies");
 }

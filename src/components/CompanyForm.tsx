@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { inputClass, labelClass, btnPrimary, btnSecondary } from "@/lib/ui";
 import type { FormState } from "@/app/(dashboard)/companies/actions";
@@ -10,6 +10,8 @@ type Defaults = {
   address?: string | null;
   phone?: string | null;
   email?: string | null;
+  notifyEmail?: string | null;
+  logo?: string | null;
 };
 
 export function CompanyForm({
@@ -24,9 +26,11 @@ export function CompanyForm({
   cancelHref: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
+  const [logoPreview, setLogoPreview] = useState<string | null>(defaults?.logo ?? null);
+  const [removeLogo, setRemoveLogo] = useState(false);
 
   return (
-    <form action={formAction} className="space-y-5">
+    <form action={formAction} encType="multipart/form-data" className="space-y-5">
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <div className="sm:col-span-2">
           <label className={labelClass} htmlFor="name">
@@ -77,6 +81,64 @@ export function CompanyForm({
             defaultValue={defaults?.address ?? ""}
             className={inputClass}
           />
+        </div>
+
+        <div className="sm:col-span-2">
+          <label className={labelClass} htmlFor="notifyEmail">
+            Low Stock Alert Email
+          </label>
+          <input
+            id="notifyEmail"
+            name="notifyEmail"
+            type="email"
+            defaultValue={defaults?.notifyEmail ?? ""}
+            className={inputClass}
+            placeholder="Where to send low-stock alerts (optional)"
+          />
+        </div>
+
+        <div className="sm:col-span-2">
+          <label className={labelClass} htmlFor="logo">
+            Company Logo
+          </label>
+          {logoPreview && !removeLogo && (
+            <div className="mb-3 flex items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={logoPreview}
+                alt="Current logo"
+                className="h-16 w-16 rounded-sm border border-rule-strong object-contain p-1"
+              />
+              <button
+                type="button"
+                onClick={() => setRemoveLogo(true)}
+                className="text-xs font-semibold text-maroon hover:underline"
+              >
+                Remove logo
+              </button>
+            </div>
+          )}
+          {removeLogo && (
+            <input type="hidden" name="removeLogo" value="1" />
+          )}
+          <input
+            id="logo"
+            name="logo"
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/svg+xml"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              setRemoveLogo(false);
+              const reader = new FileReader();
+              reader.onload = () => setLogoPreview(reader.result as string);
+              reader.readAsDataURL(file);
+            }}
+            className={inputClass}
+          />
+          <p className="mt-1 text-xs text-ink-soft">
+            Shown on printed invoices and statements. PNG, JPEG, WebP or SVG, up to 1.5MB.
+          </p>
         </div>
       </div>
 

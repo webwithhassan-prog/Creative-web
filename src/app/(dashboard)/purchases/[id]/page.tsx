@@ -5,6 +5,7 @@ import { formatMoney, formatDate, formatQty } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
 import { PrintButton } from "@/components/PrintButton";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
+import { InvoiceLetterhead } from "@/components/InvoiceLetterhead";
 import { requireActiveCompany } from "@/lib/company";
 import { deletePurchase } from "../actions";
 
@@ -43,6 +44,8 @@ export default async function PurchaseDetailPage({
           sale first.
         </p>
       )}
+
+      <InvoiceLetterhead company={active} />
 
       <div className="ledger-sheet mb-6 rounded-md p-6 pl-6">
         <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft">

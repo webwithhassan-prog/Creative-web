@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Download } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { formatMoney, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
@@ -22,9 +23,11 @@ export default async function DayBookPage({
 }) {
   const { active } = await requireActiveCompany();
   const { from, to } = await searchParams;
+  const fromStr = from || startOfMonth();
+  const toStr = to || today();
 
-  const fromDate = new Date(from || startOfMonth());
-  const toDate = new Date(to || today());
+  const fromDate = new Date(fromStr);
+  const toDate = new Date(toStr);
   toDate.setHours(23, 59, 59, 999);
 
   const dateFilter = { gte: fromDate, lte: toDate };
@@ -85,8 +88,11 @@ export default async function DayBookPage({
         title="Day Book"
         subtitle={`${active.name} — every transaction in the selected range`}
         action={
-          <div className="no-print">
+          <div className="no-print flex flex-wrap gap-3">
             <PrintButton />
+            <Link href={`/reports/day-book/export?from=${fromStr}&to=${toStr}`} className={btnSecondary}>
+              <Download size={16} /> Export CSV
+            </Link>
           </div>
         }
       />
@@ -100,7 +106,7 @@ export default async function DayBookPage({
             id="from"
             name="from"
             type="date"
-            defaultValue={from || startOfMonth()}
+            defaultValue={fromStr}
             className={inputClass}
           />
         </div>
@@ -112,7 +118,7 @@ export default async function DayBookPage({
             id="to"
             name="to"
             type="date"
-            defaultValue={to || today()}
+            defaultValue={toStr}
             className={inputClass}
           />
         </div>

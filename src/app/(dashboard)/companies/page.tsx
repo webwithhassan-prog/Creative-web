@@ -45,16 +45,30 @@ export default async function CompaniesPage({
               )}
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate font-serif text-lg font-semibold text-forest-dark">
-                    {company.name}
-                  </p>
-                  {company.phone && (
-                    <p className="text-sm text-ink-soft">{company.phone}</p>
+                <div className="flex min-w-0 items-center gap-3">
+                  {company.logo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={company.logo}
+                      alt=""
+                      className="h-12 w-12 shrink-0 rounded-sm border border-rule-strong object-contain p-1"
+                    />
+                  ) : (
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-sm border border-dashed border-rule-strong text-xs text-ink-soft">
+                      No logo
+                    </div>
                   )}
-                  {company.address && (
-                    <p className="text-sm text-ink-soft">{company.address}</p>
-                  )}
+                  <div className="min-w-0">
+                    <p className="truncate font-serif text-lg font-semibold text-forest-dark">
+                      {company.name}
+                    </p>
+                    {company.phone && (
+                      <p className="text-sm text-ink-soft">{company.phone}</p>
+                    )}
+                    {company.address && (
+                      <p className="text-sm text-ink-soft">{company.address}</p>
+                    )}
+                  </div>
                 </div>
                 {isActive && (
                   <span className="flex shrink-0 items-center gap-1 rounded-sm bg-gold/15 px-2 py-1 text-xs font-semibold text-gold">

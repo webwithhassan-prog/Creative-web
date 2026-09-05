@@ -31,13 +31,15 @@ model Admin {
 }
 
 model Company {
-  id        String   @id @default(cuid())
-  name      String
-  address   String?
-  phone     String?
-  email     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String
+  address       String?
+  phone         String?
+  email         String?
+  logo          String?  @db.Text
+  notifyEmail   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   parties          Party[]
   products         Product[]

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Download } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { closingBalanceAsOf, balanceLabel } from "@/lib/ledger";
 import { formatMoney, formatDate } from "@/lib/format";
@@ -18,7 +19,8 @@ export default async function TrialBalancePage({
 }) {
   const { active } = await requireActiveCompany();
   const { asOf } = await searchParams;
-  const asOfDate = new Date(asOf || today());
+  const asOfStr = asOf || today();
+  const asOfDate = new Date(asOfStr);
 
   const parties = await prisma.party.findMany({
     where: { companyId: active.id },
@@ -43,8 +45,11 @@ export default async function TrialBalancePage({
         title="Trial Balance"
         subtitle={`${active.name} — every account balance as of ${formatDate(asOfDate)}`}
         action={
-          <div className="no-print">
+          <div className="no-print flex flex-wrap gap-3">
             <PrintButton />
+            <Link href={`/reports/trial-balance/export?asOf=${asOfStr}`} className={btnSecondary}>
+              <Download size={16} /> Export CSV
+            </Link>
           </div>
         }
       />
@@ -58,7 +63,7 @@ export default async function TrialBalancePage({
             id="asOf"
             name="asOf"
             type="date"
-            defaultValue={asOf || today()}
+            defaultValue={asOfStr}
             className={inputClass}
           />
         </div>

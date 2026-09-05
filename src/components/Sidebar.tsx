@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, Settings, UserCog } from "lucide-react";
 import { Nav } from "./Nav";
 import { CompanySwitcher } from "./CompanySwitcher";
 import { logoutAction } from "@/app/(dashboard)/logout-action";
@@ -58,7 +58,14 @@ export function Sidebar({
       <div className="border-t border-paper/10 px-4 py-4">
         <p className="truncate text-xs font-medium text-paper/80">{session.name}</p>
         <p className="truncate text-[11px] text-paper/40">{session.email}</p>
-        <form action={logoutAction} className="mt-3">
+        <Link
+          href="/account"
+          className="mt-2 flex items-center gap-2 rounded-sm px-2 py-1.5 text-xs font-medium text-paper/60 transition hover:bg-paper/10 hover:text-paper"
+        >
+          <UserCog size={14} />
+          Account settings
+        </Link>
+        <form action={logoutAction} className="mt-1">
           <button
             type="submit"
             className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs font-medium text-paper/60 transition hover:bg-maroon/20 hover:text-paper"

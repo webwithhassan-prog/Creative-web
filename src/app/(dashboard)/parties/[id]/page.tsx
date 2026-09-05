@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Pencil, Plus, Wallet } from "lucide-react";
+import { Pencil, Plus, Wallet, Download } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { buildPartyLedger, balanceLabel } from "@/lib/ledger";
 import { formatMoney, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
 import { PrintButton } from "@/components/PrintButton";
+import { InvoiceLetterhead } from "@/components/InvoiceLetterhead";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { btnPrimary, btnSecondary } from "@/lib/ui";
 import { requireActiveCompany } from "@/lib/company";
@@ -55,6 +56,9 @@ export default async function PartyLedgerPage({
         action={
           <div className="no-print flex flex-wrap gap-3">
             <PrintButton />
+            <Link href={`/parties/${party.id}/export`} className={btnSecondary}>
+              <Download size={16} /> Export CSV
+            </Link>
             <Link href={`/parties/${party.id}/edit`} className={btnSecondary}>
               <Pencil size={16} /> Edit
             </Link>
@@ -81,6 +85,8 @@ export default async function PartyLedgerPage({
           transactions first.
         </p>
       )}
+
+      <InvoiceLetterhead company={active} />
 
       <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-3">
         <div className="ledger-sheet rounded-md p-6 pl-6 md:col-span-2">
