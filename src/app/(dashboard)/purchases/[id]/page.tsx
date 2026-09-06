@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { PrintButton } from "@/components/PrintButton";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { InvoiceLetterhead } from "@/components/InvoiceLetterhead";
+import { DownloadPdfButton } from "@/components/DownloadPdfButton";
 import { requireActiveCompany } from "@/lib/company";
 import { deletePurchase } from "../actions";
 
@@ -27,6 +28,30 @@ export default async function PurchaseDetailPage({
 
   const isReturn = invoice.kind === "RETURN";
 
+  const pdfData = {
+    companyName: active.name,
+    companyAddress: active.address ?? undefined,
+    companyContact: [active.phone, active.email].filter(Boolean).join(" · ") || undefined,
+    companyGstin: active.gstin ?? undefined,
+    docTitle: isReturn ? "Purchase Return" : "Purchase Invoice",
+    invoiceNo: invoice.invoiceNo,
+    date: formatDate(invoice.date),
+    partyLabel: "Supplier",
+    partyName: invoice.party.name,
+    partyGstin: invoice.party.gstin ?? undefined,
+    items: invoice.items.map((item) => ({
+      label: item.product ? item.product.name : item.description || "",
+      qty: item.product ? `${formatQty(item.quantity!)} ${item.product.unit}` : "—",
+      rate: item.rate !== null ? formatMoney(item.rate.toString()) : "—",
+      amount: formatMoney(item.amount.toString()),
+    })),
+    subtotal: formatMoney(invoice.subtotal.toString()),
+    taxLabel: invoice.taxRate !== null ? `Tax (${Number(invoice.taxRate)}%)` : undefined,
+    taxAmount: invoice.taxRate !== null ? formatMoney(invoice.taxAmount.toString()) : undefined,
+    total: formatMoney(invoice.totalAmount.toString()),
+    notes: invoice.notes ?? undefined,
+  };
+
   return (
     <>
       <PageHeader
@@ -44,6 +69,7 @@ export default async function PurchaseDetailPage({
         action={
           <div className="no-print flex gap-3">
             <PrintButton />
+            <DownloadPdfButton data={pdfData} />
           </div>
         }
       />

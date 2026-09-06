@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Upload } from "lucide-react";
 import clsx from "clsx";
 import { prisma } from "@/lib/prisma";
 import { closingBalance, balanceLabel } from "@/lib/ledger";
 import { formatMoney } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
-import { btnPrimary, inputClass } from "@/lib/ui";
+import { btnPrimary, btnSecondary, inputClass } from "@/lib/ui";
 import type { PartyType } from "@prisma/client";
 import { requireActiveCompany } from "@/lib/company";
 
@@ -36,9 +36,14 @@ export default async function PartiesPage({
         title="Suppliers & Customers"
         subtitle="Every account and its current running balance"
         action={
-          <Link href={`/parties/new?type=${activeType}`} className={btnPrimary}>
-            <Plus size={16} /> Add {activeType === "SUPPLIER" ? "Supplier" : "Customer"}
-          </Link>
+          <div className="no-print flex flex-wrap gap-3">
+            <Link href="/parties/import" className={btnSecondary}>
+              <Upload size={16} /> Import CSV
+            </Link>
+            <Link href={`/parties/new?type=${activeType}`} className={btnPrimary}>
+              <Plus size={16} /> Add {activeType === "SUPPLIER" ? "Supplier" : "Customer"}
+            </Link>
+          </div>
         }
       />
 

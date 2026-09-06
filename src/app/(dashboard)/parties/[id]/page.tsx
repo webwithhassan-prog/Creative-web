@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { PrintButton } from "@/components/PrintButton";
 import { InvoiceLetterhead } from "@/components/InvoiceLetterhead";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
+import { DownloadPdfButton } from "@/components/DownloadPdfButton";
 import { btnPrimary, btnSecondary } from "@/lib/ui";
 import { requireActiveCompany } from "@/lib/company";
 import { deleteParty } from "../actions";
@@ -50,6 +51,32 @@ export default async function PartyLedgerPage({
   const totalDebit = rows.reduce((s, r) => s + r.debit, 0);
   const totalCredit = rows.reduce((s, r) => s + r.credit, 0);
 
+  const pdfData = {
+    companyName: active.name,
+    companyAddress: active.address ?? undefined,
+    companyContact: [active.phone, active.email].filter(Boolean).join(" · ") || undefined,
+    companyGstin: active.gstin ?? undefined,
+    docTitle: "Account Statement",
+    date: formatDate(new Date()),
+    partyLabel: party.type === "SUPPLIER" ? "Supplier" : "Customer",
+    partyName: party.name,
+    partyGstin: party.gstin ?? undefined,
+    items: rows.map((row) => {
+      const rowBalance = balanceLabel(row.balance);
+      return {
+        label: `${formatDate(row.date)} — ${TYPE_LABELS[row.type]}${row.reference ? ` (${row.reference})` : ""}`,
+        qty: row.debit ? formatMoney(row.debit) : "",
+        rate: row.credit ? formatMoney(row.credit) : "",
+        amount: `${formatMoney(rowBalance.amount)} ${rowBalance.side}`,
+      };
+    }),
+    subtotal: "",
+    hideSubtotal: true,
+    total: `${formatMoney(amount)} ${side}`,
+    totalLabel: "Closing Balance",
+    columnLabels: { desc: "Particulars", qty: "Debit", rate: "Credit", amount: "Balance" },
+  };
+
   return (
     <>
       <PageHeader
@@ -58,6 +85,7 @@ export default async function PartyLedgerPage({
         action={
           <div className="no-print flex flex-wrap gap-3">
             <PrintButton />
+            <DownloadPdfButton data={pdfData} />
             <Link href={`/parties/${party.id}/export`} className={btnSecondary}>
               <Download size={16} /> Export CSV
             </Link>

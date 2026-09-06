@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireActiveCompany } from "@/lib/company";
+import { logActivity } from "@/lib/audit";
 
 export type FormState = { error?: string };
 
@@ -163,6 +164,13 @@ export async function createPurchase(
     }
   });
 
+  await logActivity({
+    companyId: active.id,
+    action: "CREATE",
+    entityType: kind === "RETURN" ? "PurchaseReturn" : "Purchase",
+    summary: `${kind === "RETURN" ? "Purchase return" : "Purchase"} ${invoiceNo} (${party.name}, Rs ${totalAmount.toFixed(2)})`,
+  });
+
   revalidatePath("/purchases");
   revalidatePath("/products");
   revalidatePath(`/parties/${partyId}`);
@@ -175,7 +183,7 @@ export async function deletePurchase(formData: FormData) {
 
   const invoice = await prisma.purchaseInvoice.findUnique({
     where: { id },
-    include: { items: { include: { product: true } } },
+    include: { items: { include: { product: true } }, party: true },
   });
   if (!invoice || invoice.companyId !== active.id) redirect("/purchases");
 
@@ -200,6 +208,13 @@ export async function deletePurchase(formData: FormData) {
       });
     }
     await tx.purchaseInvoice.delete({ where: { id } });
+  });
+
+  await logActivity({
+    companyId: active.id,
+    action: "DELETE",
+    entityType: invoice.kind === "RETURN" ? "PurchaseReturn" : "Purchase",
+    summary: `${invoice.kind === "RETURN" ? "Purchase return" : "Purchase"} ${invoice.invoiceNo} (${invoice.party.name}, Rs ${Number(invoice.totalAmount).toFixed(2)})`,
   });
 
   revalidatePath("/purchases");

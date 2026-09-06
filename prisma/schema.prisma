@@ -27,6 +27,12 @@ enum InvoiceKind {
   RETURN
 }
 
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
 model Admin {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -52,6 +58,7 @@ model Company {
   purchaseInvoices PurchaseInvoice[]
   saleInvoices     SaleInvoice[]
   payments         Payment[]
+  auditLogs        AuditLog[]
 }
 
 model Party {
@@ -189,4 +196,18 @@ model Payment {
 
   @@index([companyId, date])
   @@index([partyId])
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  companyId  String
+  company    Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  actorEmail String
+  actorName  String
+  action     AuditAction
+  entityType String
+  summary    String
+  createdAt  DateTime    @default(now())
+
+  @@index([companyId, createdAt])
 }

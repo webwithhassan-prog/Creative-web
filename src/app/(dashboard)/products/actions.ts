@@ -5,6 +5,10 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireActiveCompany } from "@/lib/company";
+import { logActivity } from "@/lib/audit";
+import { parseCsvWithHeader } from "@/lib/csv";
+import type { ImportState } from "@/components/CsvImportForm";
+import type { Prisma } from "@prisma/client";
 
 export type FormState = { error?: string };
 
@@ -39,6 +43,14 @@ export async function createProduct(
   } catch {
     return { error: "A product with that SKU already exists." };
   }
+
+  await logActivity({
+    companyId: active.id,
+    action: "CREATE",
+    entityType: "Product",
+    summary: `Product created: ${parsed.data.name}`,
+  });
+
   revalidatePath("/products");
   redirect("/products");
 }
@@ -61,15 +73,84 @@ export async function updateProduct(
   } catch {
     return { error: "A product with that SKU already exists." };
   }
+
+  await logActivity({
+    companyId: active.id,
+    action: "UPDATE",
+    entityType: "Product",
+    summary: `Product updated: ${parsed.data.name}`,
+  });
+
   revalidatePath("/products");
   redirect("/products");
+}
+
+export async function importProducts(
+  _prevState: ImportState,
+  formData: FormData
+): Promise<ImportState> {
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "Choose a CSV file to import" };
+  }
+
+  const { active } = await requireActiveCompany();
+  const text = await file.text();
+  const { rows } = parseCsvWithHeader(text);
+  if (rows.length === 0) return { error: "No data rows found in that file" };
+
+  const errors: string[] = [];
+  const toCreate: Prisma.ProductCreateManyInput[] = [];
+
+  rows.forEach((row, idx) => {
+    const lineNo = idx + 2;
+    const name = row["Name"]?.trim();
+    if (!name) {
+      errors.push(`Row ${lineNo}: Name is required`);
+      return;
+    }
+    const currentStock = Number(row["Current Stock"]) || 0;
+    const reorderLevel = Number(row["Reorder Level"]) || 0;
+
+    toCreate.push({
+      companyId: active.id,
+      name,
+      sku: row["SKU"] || undefined,
+      unit: row["Unit"]?.trim() || "kg",
+      currentStock,
+      reorderLevel,
+    });
+  });
+
+  let created = 0;
+  for (const data of toCreate) {
+    try {
+      await prisma.product.create({ data });
+      created++;
+    } catch {
+      errors.push(`"${data.name}": a product with that SKU already exists`);
+    }
+  }
+
+  if (created > 0) {
+    await logActivity({
+      companyId: active.id,
+      action: "CREATE",
+      entityType: "Product",
+      summary: `Imported ${created} product(s) from CSV`,
+    });
+    revalidatePath("/products");
+  }
+
+  return { result: { created, errors } };
 }
 
 export async function deleteProduct(formData: FormData) {
   const id = formData.get("id") as string;
   const { active } = await requireActiveCompany();
 
-  const [purchases, sales] = await Promise.all([
+  const [product, purchases, sales] = await Promise.all([
+    prisma.product.findUnique({ where: { id } }),
     prisma.purchaseItem.count({ where: { productId: id } }),
     prisma.saleItem.count({ where: { productId: id } }),
   ]);
@@ -79,6 +160,16 @@ export async function deleteProduct(formData: FormData) {
   }
 
   await prisma.product.deleteMany({ where: { id, companyId: active.id } });
+
+  if (product) {
+    await logActivity({
+      companyId: active.id,
+      action: "DELETE",
+      entityType: "Product",
+      summary: `Product deleted: ${product.name}`,
+    });
+  }
+
   revalidatePath("/products");
   redirect("/products");
 }

@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Pencil, Upload } from "lucide-react";
 import clsx from "clsx";
 import { prisma } from "@/lib/prisma";
 import { formatQty, formatMoney } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
-import { btnPrimary } from "@/lib/ui";
+import { btnPrimary, btnSecondary } from "@/lib/ui";
 import { requireActiveCompany } from "@/lib/company";
 
 export default async function ProductsPage({
@@ -25,9 +25,14 @@ export default async function ProductsPage({
         title="Inventory"
         subtitle="Products, current stock and reorder levels"
         action={
-          <Link href="/products/new" className={btnPrimary}>
-            <Plus size={16} /> Add Product
-          </Link>
+          <div className="no-print flex flex-wrap gap-3">
+            <Link href="/products/import" className={btnSecondary}>
+              <Upload size={16} /> Import CSV
+            </Link>
+            <Link href="/products/new" className={btnPrimary}>
+              <Plus size={16} /> Add Product
+            </Link>
+          </div>
         }
       />
 

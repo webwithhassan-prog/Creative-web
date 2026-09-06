@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookText, Scale, ArrowRight } from "lucide-react";
+import { BookText, Scale, ArrowRight, Clock, History } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 
 const REPORTS = [
@@ -16,6 +16,19 @@ const REPORTS = [
     title: "Trial Balance",
     description:
       "Every supplier and customer's balance as of a given date, split into Debit and Credit columns.",
+  },
+  {
+    href: "/reports/aging",
+    icon: Clock,
+    title: "Aging Report",
+    description:
+      "Outstanding balances broken down by how long they've been open — current, 1-30, 31-60, 61-90, 90+ days.",
+  },
+  {
+    href: "/reports/activity",
+    icon: History,
+    title: "Activity Log",
+    description: "Every create, update and delete across this company, with who did it and when.",
   },
 ];
 

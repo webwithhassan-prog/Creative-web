@@ -4,18 +4,34 @@ import clsx from "clsx";
 import { prisma } from "@/lib/prisma";
 import { formatMoney, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
+import { Pagination } from "@/components/Pagination";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { btnPrimary } from "@/lib/ui";
 import { requireActiveCompany } from "@/lib/company";
 import { deletePayment } from "./actions";
 
-export default async function PaymentsPage() {
+const PAGE_SIZE = 25;
+
+export default async function PaymentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const { active } = await requireActiveCompany();
-  const payments = await prisma.payment.findMany({
-    where: { companyId: active.id },
-    include: { party: true },
-    orderBy: { date: "desc" },
-  });
+  const { page: pageStr } = await searchParams;
+  const page = Math.max(1, Number(pageStr) || 1);
+
+  const [payments, total] = await Promise.all([
+    prisma.payment.findMany({
+      where: { companyId: active.id },
+      include: { party: true },
+      orderBy: { date: "desc" },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+    prisma.payment.count({ where: { companyId: active.id } }),
+  ]);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <>
@@ -96,6 +112,7 @@ export default async function PaymentsPage() {
         </table>
         </div>
       </div>
+      <Pagination page={page} totalPages={totalPages} total={total} basePath="/payments" />
     </>
   );
 }

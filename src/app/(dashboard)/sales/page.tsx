@@ -3,16 +3,32 @@ import { Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { formatMoney, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
+import { Pagination } from "@/components/Pagination";
 import { btnPrimary } from "@/lib/ui";
 import { requireActiveCompany } from "@/lib/company";
 
-export default async function SalesPage() {
+const PAGE_SIZE = 25;
+
+export default async function SalesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const { active } = await requireActiveCompany();
-  const invoices = await prisma.saleInvoice.findMany({
-    where: { companyId: active.id },
-    include: { party: true },
-    orderBy: { date: "desc" },
-  });
+  const { page: pageStr } = await searchParams;
+  const page = Math.max(1, Number(pageStr) || 1);
+
+  const [invoices, total] = await Promise.all([
+    prisma.saleInvoice.findMany({
+      where: { companyId: active.id },
+      include: { party: true },
+      orderBy: { date: "desc" },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+    prisma.saleInvoice.count({ where: { companyId: active.id } }),
+  ]);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <>
@@ -76,6 +92,7 @@ export default async function SalesPage() {
         </table>
         </div>
       </div>
+      <Pagination page={page} totalPages={totalPages} total={total} basePath="/sales" />
     </>
   );
 }

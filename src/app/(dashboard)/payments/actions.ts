@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireActiveCompany } from "@/lib/company";
+import { logActivity } from "@/lib/audit";
 
 export type FormState = { error?: string };
 
@@ -54,6 +55,13 @@ export async function createPayment(
     },
   });
 
+  await logActivity({
+    companyId: active.id,
+    action: "CREATE",
+    entityType: "Payment",
+    summary: `Payment ${direction === "OUT" ? "made to" : "received from"} ${party.name} (Rs ${amount.toFixed(2)}, ${method})`,
+  });
+
   revalidatePath("/payments");
   revalidatePath(`/parties/${partyId}`);
   redirect("/payments");
@@ -63,10 +71,18 @@ export async function deletePayment(formData: FormData) {
   const id = formData.get("id") as string;
   const { active } = await requireActiveCompany();
 
-  const payment = await prisma.payment.findUnique({ where: { id } });
+  const payment = await prisma.payment.findUnique({ where: { id }, include: { party: true } });
   if (!payment || payment.companyId !== active.id) redirect("/payments");
 
   await prisma.payment.delete({ where: { id } });
+
+  await logActivity({
+    companyId: active.id,
+    action: "DELETE",
+    entityType: "Payment",
+    summary: `Payment ${payment.direction === "OUT" ? "made to" : "received from"} ${payment.party.name} (Rs ${Number(payment.amount).toFixed(2)}, ${payment.method})`,
+  });
+
   revalidatePath("/payments");
   revalidatePath(`/parties/${payment.partyId}`);
   redirect("/payments");

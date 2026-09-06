@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { setActiveCompanyCookie } from "@/lib/company";
+import { logActivity } from "@/lib/audit";
 
 export type FormState = { error?: string };
 
@@ -69,6 +70,14 @@ export async function createCompany(
     data: { ...parsed.data, logo: logo.value ?? undefined },
   });
   await setActiveCompanyCookie(company.id);
+
+  await logActivity({
+    companyId: company.id,
+    action: "CREATE",
+    entityType: "Company",
+    summary: `Company created: ${company.name}`,
+  });
+
   revalidatePath("/", "layout");
   redirect("/");
 }
@@ -88,6 +97,14 @@ export async function updateCompany(
     where: { id },
     data: { ...parsed.data, ...(logo.value !== undefined ? { logo: logo.value } : {}) },
   });
+
+  await logActivity({
+    companyId: id,
+    action: "UPDATE",
+    entityType: "Company",
+    summary: `Company details updated: ${parsed.data.name}`,
+  });
+
   revalidatePath("/", "layout");
   redirect("/companies");
 }

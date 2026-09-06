@@ -133,3 +133,91 @@ export function balanceLabel(balance: number): { amount: number; side: "Dr" | "C
     ? { amount: balance, side: "Dr" }
     : { amount: -balance, side: "Cr" };
 }
+
+export type AgingBucket = "current" | "1-30" | "31-60" | "61-90" | "90+";
+export const AGING_BUCKETS: AgingBucket[] = ["current", "1-30", "31-60", "61-90", "90+"];
+
+export type AgingItem = {
+  date: Date;
+  description: string;
+  reference: string | null;
+  originalAmount: number;
+  remainingAmount: number;
+  daysOld: number;
+  bucket: AgingBucket;
+};
+
+function bucketFor(daysOld: number): AgingBucket {
+  if (daysOld <= 0) return "current";
+  if (daysOld <= 30) return "1-30";
+  if (daysOld <= 60) return "31-60";
+  if (daysOld <= 90) return "61-90";
+  return "90+";
+}
+
+/**
+ * FIFO-allocates settlements (payments, returns) against the debts that
+ * created the balance (purchases for a supplier, sales for a customer), in
+ * chronological order, so we know which portion of the current balance is
+ * how old. A supplier's balance normally sits on the credit side, so credit
+ * rows are the "debt" here and debit rows settle it; it's the mirror for a
+ * customer.
+ */
+export function computePartyAging(party: PartyWithHistory, asOfDate: Date): AgingItem[] {
+  const cutoff = new Date(asOfDate);
+  cutoff.setHours(23, 59, 59, 999);
+  const rows = buildPartyLedger(party).filter((r) => r.date.getTime() <= cutoff.getTime());
+
+  const debtField = party.type === "SUPPLIER" ? "credit" : "debit";
+  const settleField = debtField === "credit" ? "debit" : "credit";
+
+  const queue: { date: Date; description: string; reference: string | null; original: number; remaining: number }[] = [];
+
+  for (const row of rows) {
+    const debtAmount = row[debtField];
+    if (debtAmount > 0) {
+      queue.push({
+        date: row.date,
+        description: row.description,
+        reference: row.reference,
+        original: debtAmount,
+        remaining: debtAmount,
+      });
+    }
+
+    let settleAmount = row[settleField];
+    if (settleAmount > 0) {
+      for (const item of queue) {
+        if (settleAmount <= 0) break;
+        if (item.remaining <= 0) continue;
+        const applied = Math.min(item.remaining, settleAmount);
+        item.remaining -= applied;
+        settleAmount -= applied;
+      }
+    }
+  }
+
+  const msPerDay = 86_400_000;
+  return queue
+    .filter((item) => item.remaining > 0.005)
+    .map((item) => {
+      const daysOld = Math.floor((cutoff.getTime() - item.date.getTime()) / msPerDay);
+      return {
+        date: item.date,
+        description: item.description,
+        reference: item.reference,
+        originalAmount: item.original,
+        remainingAmount: item.remaining,
+        daysOld,
+        bucket: bucketFor(daysOld),
+      };
+    });
+}
+
+export function summarizeAging(items: AgingItem[]): Record<AgingBucket, number> {
+  const summary: Record<AgingBucket, number> = { current: 0, "1-30": 0, "31-60": 0, "61-90": 0, "90+": 0 };
+  for (const item of items) {
+    summary[item.bucket] += item.remainingAmount;
+  }
+  return summary;
+}
