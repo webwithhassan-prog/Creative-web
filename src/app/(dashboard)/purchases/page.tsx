@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Pencil } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { formatMoney, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
 import { Pagination } from "@/components/Pagination";
+import { SearchBox } from "@/components/SearchBox";
 import { btnPrimary } from "@/lib/ui";
 import { requireActiveCompany } from "@/lib/company";
 
@@ -12,21 +13,33 @@ const PAGE_SIZE = 25;
 export default async function PurchasesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; q?: string }>;
 }) {
   const { active } = await requireActiveCompany();
-  const { page: pageStr } = await searchParams;
+  const { page: pageStr, q } = await searchParams;
   const page = Math.max(1, Number(pageStr) || 1);
+
+  const where = {
+    companyId: active.id,
+    ...(q
+      ? {
+          OR: [
+            { invoiceNo: { contains: q, mode: "insensitive" as const } },
+            { party: { name: { contains: q, mode: "insensitive" as const } } },
+          ],
+        }
+      : {}),
+  };
 
   const [invoices, total] = await Promise.all([
     prisma.purchaseInvoice.findMany({
-      where: { companyId: active.id },
+      where,
       include: { party: true },
       orderBy: { date: "desc" },
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
     }),
-    prisma.purchaseInvoice.count({ where: { companyId: active.id } }),
+    prisma.purchaseInvoice.count({ where }),
   ]);
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -42,6 +55,10 @@ export default async function PurchasesPage({
         }
       />
 
+      <div className="mb-5">
+        <SearchBox defaultValue={q} placeholder="Search invoice # or supplier…" />
+      </div>
+
       <div className="ledger-sheet rounded-md">
         <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -51,13 +68,14 @@ export default async function PurchasesPage({
               <th className="px-4 py-3">Date</th>
               <th className="px-4 py-3">Supplier</th>
               <th className="px-4 py-3 text-right">Amount</th>
+              <th className="w-16 px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-rule">
             {invoices.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-10 text-center text-ink-soft">
-                  No purchases recorded yet.
+                <td colSpan={5} className="px-4 py-10 text-center text-ink-soft">
+                  {q ? "No purchases match that search." : "No purchases recorded yet."}
                 </td>
               </tr>
             ) : (
@@ -84,6 +102,14 @@ export default async function PurchasesPage({
                   </td>
                   <td className="tabular px-4 py-3 text-right font-semibold text-ink">
                     {formatMoney(inv.totalAmount.toString())}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Link
+                      href={`/purchases/${inv.id}/edit`}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-forest hover:underline"
+                    >
+                      <Pencil size={12} /> Edit
+                    </Link>
                   </td>
                 </tr>
               ))

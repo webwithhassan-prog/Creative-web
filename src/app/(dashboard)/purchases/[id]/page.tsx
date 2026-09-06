@@ -3,10 +3,12 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { formatMoney, formatDate, formatQty } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
+import { Pencil } from "lucide-react";
 import { PrintButton } from "@/components/PrintButton";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { InvoiceLetterhead } from "@/components/InvoiceLetterhead";
 import { DownloadPdfButton } from "@/components/DownloadPdfButton";
+import { btnSecondary } from "@/lib/ui";
 import { requireActiveCompany } from "@/lib/company";
 import { deletePurchase } from "../actions";
 
@@ -72,6 +74,9 @@ export default async function PurchaseDetailPage({
           <div className="no-print flex gap-3">
             <PrintButton />
             <DownloadPdfButton data={pdfData} />
+            <Link href={`/purchases/${invoice.id}/edit`} className={btnSecondary}>
+              <Pencil size={16} /> Edit
+            </Link>
           </div>
         }
       />

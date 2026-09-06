@@ -1,8 +1,8 @@
 import Link from "next/link";
 import clsx from "clsx";
-import { Landmark, HandCoins, Boxes, AlertTriangle, ArrowRight } from "lucide-react";
+import { Landmark, HandCoins, Boxes, AlertTriangle, ArrowRight, Clock } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { closingBalance, balanceLabel } from "@/lib/ledger";
+import { closingBalance, balanceLabel, computePartyAging } from "@/lib/ledger";
 import { formatMoney, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
 import { StatCard } from "@/components/StatCard";
@@ -122,12 +122,21 @@ export default async function DashboardPage({
 
   let totalPayable = 0;
   let totalReceivable = 0;
+  let overdueReceivable = 0;
+  let overduePayable = 0;
+  const today = new Date();
 
   for (const party of parties) {
     const balance = closingBalance(party);
     const { amount, side } = balanceLabel(balance);
     if (party.type === "SUPPLIER" && side === "Cr") totalPayable += amount;
     if (party.type === "CUSTOMER" && side === "Dr") totalReceivable += amount;
+
+    const overdue90 = computePartyAging(party, today)
+      .filter((item) => item.bucket === "90+")
+      .reduce((s, item) => s + item.remainingAmount, 0);
+    if (party.type === "CUSTOMER") overdueReceivable += overdue90;
+    else overduePayable += overdue90;
   }
 
   const lowStock = products.filter(
@@ -182,7 +191,7 @@ export default async function DashboardPage({
         subtitle="Overview of your ledgers, stock and recent activity"
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard
           label="Total Receivable"
           value={formatMoney(totalReceivable)}
@@ -197,6 +206,15 @@ export default async function DashboardPage({
           icon={Landmark}
           tone="bad"
         />
+        <Link href="/reports/aging" className="block">
+          <StatCard
+            label="Overdue 90+ Days"
+            value={formatMoney(overdueReceivable + overduePayable)}
+            hint={`${formatMoney(overdueReceivable)} receivable · ${formatMoney(overduePayable)} payable`}
+            icon={Clock}
+            tone={overdueReceivable + overduePayable > 0 ? "bad" : "neutral"}
+          />
+        </Link>
         <StatCard
           label="Products"
           value={String(products.length)}

@@ -30,6 +30,35 @@ const emptyRow = (): Row => ({
   amount: "",
 });
 
+export type InvoiceDefaults = {
+  invoiceNo: string;
+  date: string;
+  partyId: string;
+  kind: "NORMAL" | "RETURN";
+  taxRate: number | null;
+  notes: string | null;
+  items: {
+    productId: string | null;
+    description: string | null;
+    quantity: number | null;
+    rate: number | null;
+    amount: number;
+  }[];
+};
+
+function rowsFromDefaults(defaults?: InvoiceDefaults): Row[] {
+  if (!defaults || defaults.items.length === 0) return [emptyRow()];
+  return defaults.items.map((it) => ({
+    key: rowKey++,
+    custom: !it.productId,
+    productId: it.productId ?? "",
+    description: it.description ?? "",
+    quantity: it.quantity != null ? String(it.quantity) : "",
+    rate: it.rate != null ? String(it.rate) : "",
+    amount: it.productId ? "" : String(it.amount),
+  }));
+}
+
 export function InvoiceForm({
   mode,
   parties,
@@ -37,6 +66,8 @@ export function InvoiceForm({
   defaultPartyId,
   invoiceNo,
   defaultTaxRate,
+  defaults,
+  submitLabel,
   action,
   cancelHref,
 }: {
@@ -46,14 +77,16 @@ export function InvoiceForm({
   defaultPartyId?: string;
   invoiceNo: string;
   defaultTaxRate?: number;
+  defaults?: InvoiceDefaults;
+  submitLabel?: string;
   action: (state: FormState, formData: FormData) => Promise<FormState>;
   cancelHref: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
-  const [rows, setRows] = useState<Row[]>([emptyRow()]);
-  const [kind, setKind] = useState<"NORMAL" | "RETURN">("NORMAL");
-  const [taxEnabled, setTaxEnabled] = useState(false);
-  const [taxRate, setTaxRate] = useState(String(defaultTaxRate ?? 18));
+  const [rows, setRows] = useState<Row[]>(() => rowsFromDefaults(defaults));
+  const [kind, setKind] = useState<"NORMAL" | "RETURN">(defaults?.kind ?? "NORMAL");
+  const [taxEnabled, setTaxEnabled] = useState(defaults ? defaults.taxRate !== null : false);
+  const [taxRate, setTaxRate] = useState(String(defaults?.taxRate ?? defaultTaxRate ?? 18));
 
   const productMap = useMemo(
     () => new Map(products.map((p) => [p.id, p])),
@@ -136,7 +169,7 @@ export function InvoiceForm({
             id="invoiceNo"
             name="invoiceNo"
             required
-            defaultValue={invoiceNo}
+            defaultValue={defaults?.invoiceNo ?? invoiceNo}
             className={`${inputClass} tabular`}
           />
         </div>
@@ -149,7 +182,7 @@ export function InvoiceForm({
             name="date"
             type="date"
             required
-            defaultValue={new Date().toISOString().slice(0, 10)}
+            defaultValue={defaults?.date ?? new Date().toISOString().slice(0, 10)}
             className={inputClass}
           />
         </div>
@@ -161,7 +194,7 @@ export function InvoiceForm({
             id="partyId"
             name="partyId"
             required
-            defaultValue={defaultPartyId ?? ""}
+            defaultValue={defaults?.partyId ?? defaultPartyId ?? ""}
             className={inputClass}
           >
             <option value="" disabled>
@@ -375,7 +408,13 @@ export function InvoiceForm({
         <label className={labelClass} htmlFor="notes">
           Notes
         </label>
-        <textarea id="notes" name="notes" rows={2} className={inputClass} />
+        <textarea
+          id="notes"
+          name="notes"
+          rows={2}
+          defaultValue={defaults?.notes ?? ""}
+          className={inputClass}
+        />
       </div>
 
       {state.error && (
@@ -386,7 +425,7 @@ export function InvoiceForm({
 
       <div className="flex gap-3">
         <button type="submit" disabled={pending} className={btnPrimary}>
-          {pending ? "Saving…" : `Save ${isReturn ? `${noun} Return` : noun}`}
+          {pending ? "Saving…" : submitLabel ?? `Save ${isReturn ? `${noun} Return` : noun}`}
         </button>
         <Link href={cancelHref} className={btnSecondary}>
           Cancel

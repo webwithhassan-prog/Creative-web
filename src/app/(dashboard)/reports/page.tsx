@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookText, Scale, ArrowRight, Clock, History } from "lucide-react";
+import { BookText, Scale, ArrowRight, Clock, History, DatabaseBackup } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 
 const REPORTS = [
@@ -29,6 +29,13 @@ const REPORTS = [
     icon: History,
     title: "Activity Log",
     description: "Every create, update and delete across this company, with who did it and when.",
+  },
+  {
+    href: "/reports/backup/export",
+    icon: DatabaseBackup,
+    title: "Data Backup",
+    description:
+      "Download everything for this company — accounts, products, invoices, payments and the activity log — as one JSON file.",
   },
 ];
 

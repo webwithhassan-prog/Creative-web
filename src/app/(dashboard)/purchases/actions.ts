@@ -177,6 +177,151 @@ export async function createPurchase(
   redirect("/purchases");
 }
 
+export async function updatePurchase(
+  id: string,
+  _prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const parsed = readInvoice(formData);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message };
+
+  const { active } = await requireActiveCompany();
+  const { invoiceNo, partyId, date, notes, items, kind, taxRate } = parsed.data;
+
+  const existing = await prisma.purchaseInvoice.findUnique({
+    where: { id },
+    include: { items: true },
+  });
+  if (!existing || existing.companyId !== active.id) {
+    return { error: "Purchase not found" };
+  }
+
+  const party = await prisma.party.findUnique({ where: { id: partyId } });
+  if (!party || party.companyId !== active.id || party.type !== "SUPPLIER") {
+    return { error: "Selected party is not a supplier" };
+  }
+
+  const newProductIds = [...new Set(items.filter((i) => i.productId).map((i) => i.productId!))];
+  const newProducts = newProductIds.length
+    ? await prisma.product.findMany({ where: { id: { in: newProductIds }, companyId: active.id } })
+    : [];
+  if (newProducts.length !== newProductIds.length) {
+    return { error: "One or more selected products could not be found" };
+  }
+
+  if (invoiceNo !== existing.invoiceNo) {
+    const dup = await prisma.purchaseInvoice.findUnique({
+      where: { companyId_invoiceNo: { companyId: active.id, invoiceNo } },
+    });
+    if (dup) return { error: `Invoice number ${invoiceNo} is already used` };
+  }
+
+  // Simulate reversing the old stock impact and applying the new one, on top
+  // of current stock, so we can catch a resulting negative before writing
+  // anything — regardless of how the old/new items and kind differ.
+  const oldProductIds = existing.items.filter((i) => i.productId).map((i) => i.productId!);
+  const allProductIds = [...new Set([...oldProductIds, ...newProductIds])];
+  const freshProducts = await prisma.product.findMany({ where: { id: { in: allProductIds } } });
+  const stockMap = new Map(freshProducts.map((p) => [p.id, Number(p.currentStock)]));
+
+  for (const item of existing.items) {
+    if (!item.productId) continue;
+    const qty = Number(item.quantity);
+    const delta = existing.kind === "RETURN" ? qty : -qty;
+    stockMap.set(item.productId, (stockMap.get(item.productId) ?? 0) + delta);
+  }
+  for (const item of items) {
+    if (!item.productId) continue;
+    const qty = Number(item.quantity);
+    const delta = kind === "RETURN" ? -qty : qty;
+    stockMap.set(item.productId, (stockMap.get(item.productId) ?? 0) + delta);
+  }
+  for (const [productId, stock] of stockMap) {
+    if (stock < -0.0005) {
+      const product = freshProducts.find((p) => p.id === productId);
+      return {
+        error: `Saving this would make stock of ${product?.name ?? "a product"} negative (${stock.toFixed(
+          3
+        )}). Adjust quantities, or fix related sales/returns first.`,
+      };
+    }
+  }
+
+  const subtotal = items.reduce((sum, i) => sum + lineAmount(i), 0);
+  const taxAmount = taxRate ? subtotal * (taxRate / 100) : 0;
+  const totalAmount = subtotal + taxAmount;
+
+  await prisma.$transaction(async (tx) => {
+    for (const item of existing.items) {
+      if (!item.productId) continue;
+      const qty = Number(item.quantity);
+      await tx.product.update({
+        where: { id: item.productId },
+        data: existing.kind === "RETURN" ? { currentStock: { increment: qty } } : { currentStock: { decrement: qty } },
+      });
+    }
+
+    await tx.purchaseItem.deleteMany({ where: { purchaseInvoiceId: id } });
+
+    await tx.purchaseInvoice.update({
+      where: { id },
+      data: {
+        invoiceNo,
+        date: new Date(date),
+        partyId,
+        kind,
+        subtotal,
+        taxRate: taxRate ?? null,
+        taxAmount,
+        totalAmount,
+        notes,
+        items: {
+          create: items.map((i) =>
+            i.productId
+              ? {
+                  productId: i.productId,
+                  quantity: i.quantity,
+                  rate: i.rate,
+                  amount: Number(i.quantity) * Number(i.rate),
+                }
+              : { description: i.description, amount: i.amount! }
+          ),
+        },
+      },
+    });
+
+    for (const item of items) {
+      if (!item.productId) continue;
+      const qty = Number(item.quantity);
+      if (kind === "RETURN") {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { currentStock: { decrement: qty } },
+        });
+      } else {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { currentStock: { increment: qty }, lastPurchaseRate: item.rate },
+        });
+      }
+    }
+  });
+
+  await logActivity({
+    companyId: active.id,
+    action: "UPDATE",
+    entityType: kind === "RETURN" ? "PurchaseReturn" : "Purchase",
+    summary: `${kind === "RETURN" ? "Purchase return" : "Purchase"} ${invoiceNo} edited (${party.name}, Rs ${totalAmount.toFixed(2)})`,
+  });
+
+  revalidatePath("/purchases");
+  revalidatePath(`/purchases/${id}`);
+  revalidatePath("/products");
+  revalidatePath(`/parties/${partyId}`);
+  if (existing.partyId !== partyId) revalidatePath(`/parties/${existing.partyId}`);
+  redirect("/purchases");
+}
+
 export async function deletePurchase(formData: FormData) {
   const id = formData.get("id") as string;
   const { active } = await requireActiveCompany();

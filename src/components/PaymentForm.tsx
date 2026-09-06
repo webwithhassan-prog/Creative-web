@@ -138,31 +138,20 @@ export function PaymentForm({
 
         <div>
           <label className={labelClass} htmlFor="method">
-            Method / Channel
+            Method
           </label>
-          <input
+          <select
             id="method"
             name="method"
-            list="method-options"
             defaultValue={defaults?.method ?? "Cash"}
             required
-            placeholder="e.g. Cash, Soneri Bank, Style Textile"
             className={inputClass}
-          />
-          <datalist id="method-options">
-            <option value="Cash" />
-            <option value="Bank Transfer" />
-            <option value="Cheque" />
-            <option value="Online" />
-            <option value="Style Textile" />
-            <option value="Soneri Bank" />
-            <option value="HBL" />
-            <option value="HMB" />
-            <option value="Meezan Bank" />
-          </datalist>
-          <p className="mt-1 text-xs text-ink-soft">
-            Type freely — this list just suggests channels you&apos;ve used before, so the same one doesn&apos;t end up spelled two ways.
-          </p>
+          >
+            <option>Cash</option>
+            <option>Bank Transfer</option>
+            <option>Cheque</option>
+            <option>Online</option>
+          </select>
         </div>
 
         <div>
@@ -173,6 +162,7 @@ export function PaymentForm({
             id="reference"
             name="reference"
             defaultValue={defaults?.reference ?? ""}
+            placeholder="e.g. Style Payment, T&C SNB, cheque #"
             className={inputClass}
           />
         </div>

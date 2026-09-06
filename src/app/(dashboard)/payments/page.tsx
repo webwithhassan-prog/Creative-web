@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { formatMoney, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
 import { Pagination } from "@/components/Pagination";
+import { SearchBox } from "@/components/SearchBox";
 import { ConfirmSubmitButton } from "@/components/ConfirmSubmitButton";
 import { btnPrimary } from "@/lib/ui";
 import { requireActiveCompany } from "@/lib/company";
@@ -15,21 +16,34 @@ const PAGE_SIZE = 25;
 export default async function PaymentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; q?: string }>;
 }) {
   const { active } = await requireActiveCompany();
-  const { page: pageStr } = await searchParams;
+  const { page: pageStr, q } = await searchParams;
   const page = Math.max(1, Number(pageStr) || 1);
+
+  const where = {
+    companyId: active.id,
+    ...(q
+      ? {
+          OR: [
+            { party: { name: { contains: q, mode: "insensitive" as const } } },
+            { method: { contains: q, mode: "insensitive" as const } },
+            { reference: { contains: q, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+  };
 
   const [payments, total] = await Promise.all([
     prisma.payment.findMany({
-      where: { companyId: active.id },
+      where,
       include: { party: true },
       orderBy: { date: "desc" },
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
     }),
-    prisma.payment.count({ where: { companyId: active.id } }),
+    prisma.payment.count({ where }),
   ]);
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
@@ -44,6 +58,10 @@ export default async function PaymentsPage({
           </Link>
         }
       />
+
+      <div className="mb-5">
+        <SearchBox defaultValue={q} placeholder="Search account, method or reference…" />
+      </div>
 
       <div className="ledger-sheet rounded-md">
         <div className="overflow-x-auto">
@@ -63,7 +81,7 @@ export default async function PaymentsPage({
             {payments.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-4 py-10 text-center text-ink-soft">
-                  No payments recorded yet.
+                  {q ? "No payments match that search." : "No payments recorded yet."}
                 </td>
               </tr>
             ) : (
