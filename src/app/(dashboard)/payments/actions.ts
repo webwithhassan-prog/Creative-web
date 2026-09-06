@@ -67,6 +67,53 @@ export async function createPayment(
   redirect("/payments");
 }
 
+export async function updatePayment(
+  id: string,
+  _prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const parsed = paymentSchema.safeParse({
+    partyId: formData.get("partyId"),
+    date: formData.get("date"),
+    amount: formData.get("amount"),
+    direction: formData.get("direction"),
+    method: formData.get("method"),
+    reference: formData.get("reference") || undefined,
+    notes: formData.get("notes") || undefined,
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message };
+
+  const { active } = await requireActiveCompany();
+  const { partyId, date, amount, direction, method, reference, notes } = parsed.data;
+
+  const existing = await prisma.payment.findUnique({ where: { id } });
+  if (!existing || existing.companyId !== active.id) {
+    return { error: "Payment not found" };
+  }
+
+  const party = await prisma.party.findUnique({ where: { id: partyId } });
+  if (!party || party.companyId !== active.id) {
+    return { error: "Selected account could not be found" };
+  }
+
+  await prisma.payment.update({
+    where: { id },
+    data: { partyId, date: new Date(date), amount, direction, method, reference, notes },
+  });
+
+  await logActivity({
+    companyId: active.id,
+    action: "UPDATE",
+    entityType: "Payment",
+    summary: `Payment ${direction === "OUT" ? "made to" : "received from"} ${party.name} edited (Rs ${amount.toFixed(2)}, ${method})`,
+  });
+
+  revalidatePath("/payments");
+  revalidatePath(`/parties/${partyId}`);
+  if (existing.partyId !== partyId) revalidatePath(`/parties/${existing.partyId}`);
+  redirect("/payments");
+}
+
 export async function deletePayment(formData: FormData) {
   const id = formData.get("id") as string;
   const { active } = await requireActiveCompany();

@@ -6,20 +6,34 @@ import { inputClass, labelClass, btnPrimary, btnSecondary } from "@/lib/ui";
 import type { FormState } from "@/app/(dashboard)/payments/actions";
 
 type Party = { id: string; name: string; type: "SUPPLIER" | "CUSTOMER" };
+type Defaults = {
+  partyId?: string;
+  direction?: "IN" | "OUT";
+  date?: string;
+  amount?: number;
+  method?: string;
+  reference?: string | null;
+  notes?: string | null;
+};
 
 export function PaymentForm({
   parties,
   defaultPartyId,
+  defaults,
+  submitLabel,
   action,
 }: {
   parties: Party[];
   defaultPartyId?: string;
+  defaults?: Defaults;
+  submitLabel?: string;
   action: (state: FormState, formData: FormData) => Promise<FormState>;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
-  const defaultParty = parties.find((p) => p.id === defaultPartyId);
+  const initialPartyId = defaults?.partyId ?? defaultPartyId;
+  const defaultParty = parties.find((p) => p.id === initialPartyId);
   const [direction, setDirection] = useState<"IN" | "OUT">(
-    defaultParty?.type === "CUSTOMER" ? "IN" : "OUT"
+    defaults?.direction ?? (defaultParty?.type === "CUSTOMER" ? "IN" : "OUT")
   );
 
   return (
@@ -33,7 +47,7 @@ export function PaymentForm({
             id="partyId"
             name="partyId"
             required
-            defaultValue={defaultPartyId ?? ""}
+            defaultValue={initialPartyId ?? ""}
             onChange={(e) => {
               const party = parties.find((p) => p.id === e.target.value);
               if (party) setDirection(party.type === "CUSTOMER" ? "IN" : "OUT");
@@ -101,7 +115,7 @@ export function PaymentForm({
             name="date"
             type="date"
             required
-            defaultValue={new Date().toISOString().slice(0, 10)}
+            defaultValue={defaults?.date ?? new Date().toISOString().slice(0, 10)}
             className={inputClass}
           />
         </div>
@@ -117,34 +131,63 @@ export function PaymentForm({
             step="0.01"
             min="0.01"
             required
+            defaultValue={defaults?.amount}
             className={`${inputClass} tabular`}
           />
         </div>
 
         <div>
           <label className={labelClass} htmlFor="method">
-            Method
+            Method / Channel
           </label>
-          <select id="method" name="method" defaultValue="Cash" className={inputClass}>
-            <option>Cash</option>
-            <option>Bank Transfer</option>
-            <option>Cheque</option>
-            <option>Online</option>
-          </select>
+          <input
+            id="method"
+            name="method"
+            list="method-options"
+            defaultValue={defaults?.method ?? "Cash"}
+            required
+            placeholder="e.g. Cash, Soneri Bank, Style Textile"
+            className={inputClass}
+          />
+          <datalist id="method-options">
+            <option value="Cash" />
+            <option value="Bank Transfer" />
+            <option value="Cheque" />
+            <option value="Online" />
+            <option value="Style Textile" />
+            <option value="Soneri Bank" />
+            <option value="HBL" />
+            <option value="HMB" />
+            <option value="Meezan Bank" />
+          </datalist>
+          <p className="mt-1 text-xs text-ink-soft">
+            Type freely — this list just suggests channels you&apos;ve used before, so the same one doesn&apos;t end up spelled two ways.
+          </p>
         </div>
 
         <div>
           <label className={labelClass} htmlFor="reference">
             Reference No.
           </label>
-          <input id="reference" name="reference" className={inputClass} />
+          <input
+            id="reference"
+            name="reference"
+            defaultValue={defaults?.reference ?? ""}
+            className={inputClass}
+          />
         </div>
 
         <div className="sm:col-span-2">
           <label className={labelClass} htmlFor="notes">
             Notes
           </label>
-          <textarea id="notes" name="notes" rows={2} className={inputClass} />
+          <textarea
+            id="notes"
+            name="notes"
+            rows={2}
+            defaultValue={defaults?.notes ?? ""}
+            className={inputClass}
+          />
         </div>
       </div>
 
@@ -156,7 +199,7 @@ export function PaymentForm({
 
       <div className="flex gap-3">
         <button type="submit" disabled={pending} className={btnPrimary}>
-          {pending ? "Saving…" : "Record Payment"}
+          {pending ? "Saving…" : submitLabel ?? "Record Payment"}
         </button>
         <Link href="/payments" className={btnSecondary}>
           Cancel

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Pencil } from "lucide-react";
 import clsx from "clsx";
 import { prisma } from "@/lib/prisma";
 import { formatMoney, formatDate } from "@/lib/format";
@@ -56,7 +56,7 @@ export default async function PaymentsPage({
               <th className="px-4 py-3">Method</th>
               <th className="px-4 py-3">Reference</th>
               <th className="px-4 py-3 text-right">Amount</th>
-              <th className="w-16 px-4 py-3" />
+              <th className="w-28 px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-rule">
@@ -94,16 +94,24 @@ export default async function PaymentsPage({
                   <td className="tabular px-4 py-3 text-right font-semibold text-ink">
                     {formatMoney(p.amount.toString())}
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    <form action={deletePayment}>
-                      <input type="hidden" name="id" value={p.id} />
-                      <ConfirmSubmitButton
-                        confirmMessage="Delete this payment?"
-                        className="px-2 py-1"
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-3">
+                      <Link
+                        href={`/payments/${p.id}/edit`}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-forest hover:underline"
                       >
-                        Delete
-                      </ConfirmSubmitButton>
-                    </form>
+                        <Pencil size={12} /> Edit
+                      </Link>
+                      <form action={deletePayment}>
+                        <input type="hidden" name="id" value={p.id} />
+                        <ConfirmSubmitButton
+                          confirmMessage="Delete this payment?"
+                          className="px-2 py-1"
+                        >
+                          Delete
+                        </ConfirmSubmitButton>
+                      </form>
+                    </div>
                   </td>
                 </tr>
               ))
