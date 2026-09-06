@@ -14,7 +14,9 @@ import { deleteParty } from "../actions";
 
 const TYPE_LABELS: Record<string, string> = {
   PURCHASE: "Purchase",
+  PURCHASE_RETURN: "Purchase Return",
   SALE: "Sale",
+  SALE_RETURN: "Sale Return",
   PAYMENT_IN: "Payment Received",
   PAYMENT_OUT: "Payment Made",
   OPENING: "Opening Balance",
@@ -100,6 +102,8 @@ export default async function PartyLedgerPage({
             <dd className="text-ink">{party.email || "—"}</dd>
             <dt className="text-ink-soft">Address</dt>
             <dd className="text-ink">{party.address || "—"}</dd>
+            <dt className="text-ink-soft">GSTIN</dt>
+            <dd className="text-ink">{party.gstin || "—"}</dd>
             <dt className="text-ink-soft">Notes</dt>
             <dd className="text-ink">{party.notes || "—"}</dd>
           </dl>

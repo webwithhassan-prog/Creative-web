@@ -11,6 +11,7 @@ type Defaults = {
   phone?: string | null;
   email?: string | null;
   address?: string | null;
+  gstin?: string | null;
   openingBalance?: number;
   openingBalanceSide?: "DEBIT" | "CREDIT";
   openingBalanceDate?: string;
@@ -102,6 +103,19 @@ export function PartyForm({
             id="address"
             name="address"
             defaultValue={defaults?.address ?? ""}
+            className={inputClass}
+          />
+        </div>
+
+        <div className="sm:col-span-2">
+          <label className={labelClass} htmlFor="gstin">
+            GSTIN / Tax Registration No.
+          </label>
+          <input
+            id="gstin"
+            name="gstin"
+            defaultValue={defaults?.gstin ?? ""}
+            placeholder="Optional — shown on printed tax invoices"
             className={inputClass}
           />
         </div>

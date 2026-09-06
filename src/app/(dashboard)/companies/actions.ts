@@ -16,6 +16,8 @@ const companySchema = z.object({
   address: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().optional(),
+  gstin: z.string().optional(),
+  defaultTaxRate: z.coerce.number().min(0).max(100).default(18),
 });
 
 function readCompany(formData: FormData) {
@@ -24,6 +26,8 @@ function readCompany(formData: FormData) {
     address: formData.get("address") || undefined,
     phone: formData.get("phone") || undefined,
     email: formData.get("email") || undefined,
+    gstin: formData.get("gstin") || undefined,
+    defaultTaxRate: formData.get("defaultTaxRate") || 18,
   });
 }
 

@@ -54,6 +54,11 @@ export default async function SalesPage() {
                     >
                       {inv.invoiceNo}
                     </Link>
+                    {inv.kind === "RETURN" && (
+                      <span className="ml-2 rounded-sm border border-maroon/30 bg-maroon/5 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-maroon">
+                        Return
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-ink-soft">{formatDate(inv.date)}</td>
                   <td className="px-4 py-3">

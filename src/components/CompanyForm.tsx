@@ -11,6 +11,8 @@ type Defaults = {
   phone?: string | null;
   email?: string | null;
   logo?: string | null;
+  gstin?: string | null;
+  defaultTaxRate?: number;
 };
 
 export function CompanyForm({
@@ -80,6 +82,38 @@ export function CompanyForm({
             defaultValue={defaults?.address ?? ""}
             className={inputClass}
           />
+        </div>
+
+        <div>
+          <label className={labelClass} htmlFor="gstin">
+            GSTIN / Tax Registration No.
+          </label>
+          <input
+            id="gstin"
+            name="gstin"
+            defaultValue={defaults?.gstin ?? ""}
+            placeholder="Optional — shown on printed invoices"
+            className={inputClass}
+          />
+        </div>
+
+        <div>
+          <label className={labelClass} htmlFor="defaultTaxRate">
+            Default Tax Rate (%)
+          </label>
+          <input
+            id="defaultTaxRate"
+            name="defaultTaxRate"
+            type="number"
+            step="0.01"
+            min="0"
+            max="100"
+            defaultValue={defaults?.defaultTaxRate ?? 18}
+            className={`${inputClass} tabular`}
+          />
+          <p className="mt-1 text-xs text-ink-soft">
+            Pre-fills the tax rate on new invoices. Tax stays optional per invoice.
+          </p>
         </div>
 
         <div className="sm:col-span-2">

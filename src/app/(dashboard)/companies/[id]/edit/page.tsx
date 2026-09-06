@@ -29,6 +29,8 @@ export default async function EditCompanyPage({
             phone: company.phone,
             email: company.email,
             logo: company.logo,
+            gstin: company.gstin,
+            defaultTaxRate: Number(company.defaultTaxRate),
           }}
         />
       </div>

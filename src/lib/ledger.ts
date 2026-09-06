@@ -3,7 +3,9 @@ import type { Party, PurchaseInvoice, SaleInvoice, Payment } from "@prisma/clien
 export type LedgerEntryType =
   | "OPENING"
   | "PURCHASE"
+  | "PURCHASE_RETURN"
   | "SALE"
+  | "SALE_RETURN"
   | "PAYMENT_IN"
   | "PAYMENT_OUT";
 
@@ -48,26 +50,34 @@ export function buildPartyLedger(party: PartyWithHistory): LedgerRow[] {
   }
 
   for (const inv of party.purchaseInvoices) {
+    const isReturn = inv.kind === "RETURN";
+    const amount = Number(inv.totalAmount);
     unsorted.push({
       id: inv.id,
       date: inv.date,
-      type: "PURCHASE",
-      description: `Purchase invoice ${inv.invoiceNo}`,
+      type: isReturn ? "PURCHASE_RETURN" : "PURCHASE",
+      description: `${isReturn ? "Purchase return" : "Purchase invoice"} ${inv.invoiceNo}`,
       reference: inv.invoiceNo,
-      debit: 0,
-      credit: Number(inv.totalAmount),
+      // A normal purchase credits the supplier (increases payable); a
+      // return reverses that, debiting the supplier same as a payment.
+      debit: isReturn ? amount : 0,
+      credit: isReturn ? 0 : amount,
     });
   }
 
   for (const inv of party.saleInvoices) {
+    const isReturn = inv.kind === "RETURN";
+    const amount = Number(inv.totalAmount);
     unsorted.push({
       id: inv.id,
       date: inv.date,
-      type: "SALE",
-      description: `Sale invoice ${inv.invoiceNo}`,
+      type: isReturn ? "SALE_RETURN" : "SALE",
+      description: `${isReturn ? "Sale return" : "Sale invoice"} ${inv.invoiceNo}`,
       reference: inv.invoiceNo,
-      debit: Number(inv.totalAmount),
-      credit: 0,
+      // A normal sale debits the customer (increases receivable); a
+      // return reverses that, crediting the customer same as a payment.
+      debit: isReturn ? 0 : amount,
+      credit: isReturn ? amount : 0,
     });
   }
 

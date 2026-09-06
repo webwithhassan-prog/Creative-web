@@ -17,6 +17,9 @@ export function InvoiceLetterhead({ company }: { company: Company }) {
         <p className="text-sm text-ink-soft">
           {[company.phone, company.email].filter(Boolean).join(" · ")}
         </p>
+        {company.gstin && (
+          <p className="text-sm text-ink-soft">GSTIN: {company.gstin}</p>
+        )}
       </div>
     </div>
   );

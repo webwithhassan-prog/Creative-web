@@ -2,13 +2,12 @@
 
 import { useRef } from "react";
 import { switchCompany } from "@/app/(dashboard)/companies/actions";
-import type { Company } from "@prisma/client";
 
 export function CompanySwitcher({
   companies,
   activeCompanyId,
 }: {
-  companies: Company[];
+  companies: { id: string; name: string }[];
   activeCompanyId: string;
 }) {
   const formRef = useRef<HTMLFormElement>(null);

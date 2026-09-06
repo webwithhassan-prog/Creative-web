@@ -40,6 +40,7 @@ export default async function NewSalePage({
         }))}
         defaultPartyId={partyId}
         invoiceNo={invoiceNo}
+        defaultTaxRate={Number(active.defaultTaxRate)}
         action={createSale}
         cancelHref="/sales"
       />

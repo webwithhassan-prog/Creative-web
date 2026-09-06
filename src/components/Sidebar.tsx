@@ -36,7 +36,10 @@ export function Sidebar({
           Company
         </p>
         {activeCompany && companies.length > 0 ? (
-          <CompanySwitcher companies={companies} activeCompanyId={activeCompany.id} />
+          <CompanySwitcher
+            companies={companies.map((c) => ({ id: c.id, name: c.name }))}
+            activeCompanyId={activeCompany.id}
+          />
         ) : (
           <Link
             href="/companies/new"
