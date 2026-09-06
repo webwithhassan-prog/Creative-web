@@ -65,14 +65,51 @@ body {
 }
 
 @media print {
+  @page {
+    margin: 14mm 12mm;
+  }
   .no-print {
     display: none !important;
   }
+  .print-only {
+    display: block !important;
+  }
+  html,
   body {
     background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-adjust: exact;
   }
   .ledger-sheet {
     box-shadow: none !important;
     border-color: #999 !important;
   }
+  table {
+    border-collapse: collapse;
+  }
+  thead {
+    display: table-header-group;
+  }
+  tfoot {
+    display: table-footer-group;
+  }
+  tr,
+  td,
+  th {
+    break-inside: avoid;
+  }
+  a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+}
+
+.print-only {
+  display: none;
 }

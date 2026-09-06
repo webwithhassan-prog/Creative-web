@@ -56,6 +56,7 @@ export default async function PartyLedgerPage({
     companyAddress: active.address ?? undefined,
     companyContact: [active.phone, active.email].filter(Boolean).join(" · ") || undefined,
     companyGstin: active.gstin ?? undefined,
+    companyLogo: active.logo ?? undefined,
     docTitle: "Account Statement",
     date: formatDate(new Date()),
     partyLabel: party.type === "SUPPLIER" ? "Supplier" : "Customer",
