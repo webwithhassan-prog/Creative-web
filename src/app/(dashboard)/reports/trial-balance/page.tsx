@@ -5,6 +5,7 @@ import { closingBalanceAsOf, balanceLabel } from "@/lib/ledger";
 import { formatMoney, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
 import { PrintButton } from "@/components/PrintButton";
+import { DownloadReportPdfButton } from "@/components/DownloadReportPdfButton";
 import { requireActiveCompany } from "@/lib/company";
 import { inputClass, labelClass, btnSecondary } from "@/lib/ui";
 
@@ -39,6 +40,34 @@ export default async function TrialBalancePage({
   const totalDr = rows.filter((r) => r.side === "Dr").reduce((s, r) => s + r.amount, 0);
   const totalCr = rows.filter((r) => r.side === "Cr").reduce((s, r) => s + r.amount, 0);
 
+  const pdfData = {
+    companyName: active.name,
+    companyAddress: active.address ?? undefined,
+    companyContact: [active.phone, active.email].filter(Boolean).join(" · ") || undefined,
+    companyGstin: active.gstin ?? undefined,
+    companyLogo: active.logo ?? undefined,
+    title: "Trial Balance",
+    subtitle: `Every account balance as of ${formatDate(asOfDate)}`,
+    sections: [
+      {
+        columns: [
+          { label: "Account" },
+          { label: "Type" },
+          { label: "Debit", align: "right" as const },
+          { label: "Credit", align: "right" as const },
+        ],
+        rows: rows.map(({ party, amount, side }) => [
+          party.name,
+          party.type === "SUPPLIER" ? "Supplier" : "Customer",
+          side === "Dr" ? formatMoney(amount) : "",
+          side === "Cr" ? formatMoney(amount) : "",
+        ]),
+        totalsRow: ["Total", "", formatMoney(totalDr), formatMoney(totalCr)],
+        emptyMessage: "No account balances as of this date.",
+      },
+    ],
+  };
+
   return (
     <>
       <PageHeader
@@ -47,6 +76,7 @@ export default async function TrialBalancePage({
         action={
           <div className="no-print flex flex-wrap gap-3">
             <PrintButton />
+            <DownloadReportPdfButton data={pdfData} />
             <Link href={`/reports/trial-balance/export?asOf=${asOfStr}`} className={btnSecondary}>
               <Download size={16} /> Export CSV
             </Link>

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { formatMoney, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
 import { PrintButton } from "@/components/PrintButton";
+import { DownloadReportPdfButton } from "@/components/DownloadReportPdfButton";
 import { requireActiveCompany } from "@/lib/company";
 import { inputClass, labelClass, btnSecondary } from "@/lib/ui";
 
@@ -62,6 +63,69 @@ export default async function TaxSummaryPage({
 
   const netPayable = outputTax - inputTax;
 
+  const pdfData = {
+    companyName: active.name,
+    companyAddress: active.address ?? undefined,
+    companyContact: [active.phone, active.email].filter(Boolean).join(" · ") || undefined,
+    companyGstin: active.gstin ?? undefined,
+    companyLogo: active.logo ?? undefined,
+    title: "Tax Summary",
+    subtitle: `Output tax (sales) vs. input tax (purchases) from ${formatDate(fromDate)} to ${formatDate(toDate)}`,
+    stats: [
+      { label: "Output Tax (Sales)", value: formatMoney(outputTax), hint: "Tax collected from customers" },
+      { label: "Input Tax (Purchases)", value: formatMoney(inputTax), hint: "Tax paid to suppliers" },
+      {
+        label: netPayable >= 0 ? "Net Tax Payable" : "Net Tax Refundable",
+        value: formatMoney(Math.abs(netPayable)),
+        hint: "Output tax minus input tax",
+      },
+    ],
+    sections: [
+      {
+        heading: "Sales — Output Tax",
+        columns: [
+          { label: "Date" },
+          { label: "Invoice" },
+          { label: "Customer" },
+          { label: "Subtotal", align: "right" as const },
+          { label: "Rate", align: "right" as const },
+          { label: "Tax", align: "right" as const },
+        ],
+        rows: salesTaxed.map((s) => [
+          formatDate(s.date),
+          `${s.invoiceNo}${s.kind === "RETURN" ? " (Return)" : ""}`,
+          s.party.name,
+          `${s.kind === "RETURN" ? "-" : ""}${formatMoney(s.subtotal.toString())}`,
+          `${Number(s.taxRate)}%`,
+          `${s.kind === "RETURN" ? "-" : ""}${formatMoney(s.taxAmount.toString())}`,
+        ]),
+        totalsRow: ["Total", "", "", formatMoney(outputSubtotal), "", formatMoney(outputTax)],
+        emptyMessage: "No taxed sales in this date range.",
+      },
+      {
+        heading: "Purchases — Input Tax",
+        columns: [
+          { label: "Date" },
+          { label: "Invoice" },
+          { label: "Supplier" },
+          { label: "Subtotal", align: "right" as const },
+          { label: "Rate", align: "right" as const },
+          { label: "Tax", align: "right" as const },
+        ],
+        rows: purchasesTaxed.map((p) => [
+          formatDate(p.date),
+          `${p.invoiceNo}${p.kind === "RETURN" ? " (Return)" : ""}`,
+          p.party.name,
+          `${p.kind === "RETURN" ? "-" : ""}${formatMoney(p.subtotal.toString())}`,
+          `${Number(p.taxRate)}%`,
+          `${p.kind === "RETURN" ? "-" : ""}${formatMoney(p.taxAmount.toString())}`,
+        ]),
+        totalsRow: ["Total", "", "", formatMoney(inputSubtotal), "", formatMoney(inputTax)],
+        emptyMessage: "No taxed purchases in this date range.",
+      },
+    ],
+  };
+
   return (
     <>
       <PageHeader
@@ -70,6 +134,7 @@ export default async function TaxSummaryPage({
         action={
           <div className="no-print flex flex-wrap gap-3">
             <PrintButton />
+            <DownloadReportPdfButton data={pdfData} />
             <Link href={`/reports/tax-summary/export?from=${fromStr}&to=${toStr}`} className={btnSecondary}>
               <Download size={16} /> Export CSV
             </Link>

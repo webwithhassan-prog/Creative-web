@@ -5,6 +5,7 @@ import { computePartyAging, summarizeAging, AGING_BUCKETS, type AgingBucket } fr
 import { formatMoney, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
 import { PrintButton } from "@/components/PrintButton";
+import { DownloadReportPdfButton } from "@/components/DownloadReportPdfButton";
 import { requireActiveCompany } from "@/lib/company";
 import { inputClass, labelClass, btnSecondary } from "@/lib/ui";
 
@@ -52,6 +53,39 @@ export default async function AgingReportPage({
   );
   const grandTotal = AGING_BUCKETS.reduce((s, b) => s + grandTotals[b], 0);
 
+  const pdfData = {
+    companyName: active.name,
+    companyAddress: active.address ?? undefined,
+    companyContact: [active.phone, active.email].filter(Boolean).join(" · ") || undefined,
+    companyGstin: active.gstin ?? undefined,
+    companyLogo: active.logo ?? undefined,
+    title: "Aging Report",
+    subtitle: `Outstanding balances by how long they've been open, as of ${formatDate(asOfDate)}`,
+    sections: [
+      {
+        columns: [
+          { label: "Account" },
+          { label: "Type" },
+          ...AGING_BUCKETS.map((b) => ({ label: BUCKET_LABELS[b], align: "right" as const })),
+          { label: "Total", align: "right" as const },
+        ],
+        rows: rows.map(({ party, summary, total }) => [
+          party.name,
+          party.type === "SUPPLIER" ? "Supplier" : "Customer",
+          ...AGING_BUCKETS.map((b) => (summary[b] > 0.005 ? formatMoney(summary[b]) : "")),
+          formatMoney(total),
+        ]),
+        totalsRow: [
+          "Total",
+          "",
+          ...AGING_BUCKETS.map((b) => formatMoney(grandTotals[b])),
+          formatMoney(grandTotal),
+        ],
+        emptyMessage: "Nothing outstanding as of this date.",
+      },
+    ],
+  };
+
   return (
     <>
       <PageHeader
@@ -60,6 +94,7 @@ export default async function AgingReportPage({
         action={
           <div className="no-print flex flex-wrap gap-3">
             <PrintButton />
+            <DownloadReportPdfButton data={pdfData} />
             <Link
               href={`/reports/aging/export?asOf=${asOfStr}${filterType ? `&type=${filterType}` : ""}`}
               className={btnSecondary}
