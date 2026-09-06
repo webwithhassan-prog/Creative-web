@@ -138,20 +138,26 @@ export default async function DashboardPage({
     ...recentPurchases.map((p) => ({
       id: `pur-${p.id}`,
       date: p.date,
-      label: `Purchase from ${p.party.name}`,
+      label:
+        p.kind === "RETURN"
+          ? `Purchase return to ${p.party.name}`
+          : `Purchase from ${p.party.name}`,
       ref: p.invoiceNo,
       amount: Number(p.totalAmount),
       href: `/purchases/${p.id}`,
-      tone: "bad" as const,
+      tone: p.kind === "RETURN" ? ("good" as const) : ("bad" as const),
     })),
     ...recentSales.map((s) => ({
       id: `sale-${s.id}`,
       date: s.date,
-      label: `Sale to ${s.party.name}`,
+      label:
+        s.kind === "RETURN"
+          ? `Sale return from ${s.party.name}`
+          : `Sale to ${s.party.name}`,
       ref: s.invoiceNo,
       amount: Number(s.totalAmount),
       href: `/sales/${s.id}`,
-      tone: "good" as const,
+      tone: s.kind === "RETURN" ? ("bad" as const) : ("good" as const),
     })),
     ...recentPayments.map((p) => ({
       id: `pay-${p.id}`,
