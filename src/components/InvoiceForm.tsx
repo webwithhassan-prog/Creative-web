@@ -93,10 +93,7 @@ export function InvoiceForm({
   const initialPartyId = defaults?.partyId ?? defaultPartyId ?? "";
   const [partyId, setPartyId] = useState(initialPartyId);
   const [invoiceNoValue, setInvoiceNoValue] = useState(
-    () =>
-      defaults?.invoiceNo ??
-      (initialPartyId && invoiceNoSuggestions?.[initialPartyId]) ??
-      invoiceNo
+    () => defaults?.invoiceNo ?? (initialPartyId ? invoiceNoSuggestions?.[initialPartyId] : undefined) ?? invoiceNo
   );
   const invoiceNoRef = useRef<HTMLInputElement>(null);
 
