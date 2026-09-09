@@ -71,6 +71,7 @@ model Party {
   email              String?
   address            String?
   gstin              String?
+  invoicePrefix      String?
   openingBalance     Decimal     @default(0) @db.Decimal(14, 2)
   openingBalanceSide BalanceSide @default(DEBIT)
   openingBalanceDate DateTime    @default(now())

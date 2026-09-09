@@ -31,6 +31,7 @@ export default async function EditPartyPage({
             email: party.email,
             address: party.address,
             gstin: party.gstin,
+            invoicePrefix: party.invoicePrefix,
             openingBalance: Number(party.openingBalance),
             openingBalanceSide: party.openingBalanceSide,
             openingBalanceDate: party.openingBalanceDate.toISOString().slice(0, 10),

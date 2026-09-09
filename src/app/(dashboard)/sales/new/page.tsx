@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/PageHeader";
 import { InvoiceForm } from "@/components/InvoiceForm";
 import { requireActiveCompany } from "@/lib/company";
-import { createSale, getNextSaleInvoiceNo } from "../actions";
+import { createSale, getSaleInvoiceNoSuggestions } from "../actions";
 
 export default async function NewSalePage({
   searchParams,
@@ -12,7 +12,7 @@ export default async function NewSalePage({
   const { partyId } = await searchParams;
   const { active } = await requireActiveCompany();
 
-  const [customers, products, invoiceNo] = await Promise.all([
+  const [customers, products, { suggestions, fallback }] = await Promise.all([
     prisma.party.findMany({
       where: { companyId: active.id, type: "CUSTOMER", isActive: true },
       orderBy: { name: "asc" },
@@ -23,7 +23,7 @@ export default async function NewSalePage({
       orderBy: { name: "asc" },
       select: { id: true, name: true, unit: true, lastSaleRate: true },
     }),
-    getNextSaleInvoiceNo(),
+    getSaleInvoiceNoSuggestions(),
   ]);
 
   return (
@@ -39,7 +39,8 @@ export default async function NewSalePage({
           lastRate: p.lastSaleRate ? Number(p.lastSaleRate) : null,
         }))}
         defaultPartyId={partyId}
-        invoiceNo={invoiceNo}
+        invoiceNo={fallback}
+        invoiceNoSuggestions={suggestions}
         defaultTaxRate={Number(active.defaultTaxRate)}
         action={createSale}
         cancelHref="/sales"

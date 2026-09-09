@@ -61,14 +61,52 @@ function readInvoice(formData: FormData) {
   });
 }
 
-async function nextInvoiceNumber(companyId: string) {
-  const count = await prisma.saleInvoice.count({ where: { companyId } });
-  return `SALE-${String(count + 1).padStart(4, "0")}`;
+// Builds a per-customer suggested invoice number ("BC-004"…) from each
+// customer's short invoice code, continuing on from the highest number
+// already used for that code. Customers without a code fall back to a
+// generic "SALE-" sequence.
+function computeInvoiceNoSuggestions(
+  existingInvoiceNos: string[],
+  parties: { id: string; invoicePrefix: string | null }[],
+  fallbackPrefix: string
+) {
+  const maxByPrefix = new Map<string, number>();
+  const re = /^([A-Za-z0-9]+)-(\d+)$/;
+  for (const no of existingInvoiceNos) {
+    const m = re.exec(no);
+    if (!m) continue;
+    const prefix = m[1].toUpperCase();
+    const num = parseInt(m[2], 10);
+    if (Number.isFinite(num) && num > (maxByPrefix.get(prefix) ?? 0)) maxByPrefix.set(prefix, num);
+  }
+  function next(prefix: string) {
+    const key = prefix.toUpperCase();
+    const n = (maxByPrefix.get(key) ?? 0) + 1;
+    maxByPrefix.set(key, n);
+    return `${key}-${String(n).padStart(3, "0")}`;
+  }
+  const fallback = next(fallbackPrefix);
+  const suggestions: Record<string, string> = {};
+  for (const party of parties) {
+    suggestions[party.id] = next(party.invoicePrefix?.trim() || fallbackPrefix);
+  }
+  return { suggestions, fallback };
 }
 
-export async function getNextSaleInvoiceNo() {
+export async function getSaleInvoiceNoSuggestions() {
   const { active } = await requireActiveCompany();
-  return nextInvoiceNumber(active.id);
+  const [parties, invoices] = await Promise.all([
+    prisma.party.findMany({
+      where: { companyId: active.id, type: "CUSTOMER" },
+      select: { id: true, invoicePrefix: true },
+    }),
+    prisma.saleInvoice.findMany({ where: { companyId: active.id }, select: { invoiceNo: true } }),
+  ]);
+  return computeInvoiceNoSuggestions(
+    invoices.map((i) => i.invoiceNo),
+    parties,
+    "SALE"
+  );
 }
 
 export async function createSale(

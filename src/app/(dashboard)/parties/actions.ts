@@ -19,6 +19,10 @@ const partySchema = z.object({
   email: z.string().optional(),
   address: z.string().optional(),
   gstin: z.string().optional(),
+  invoicePrefix: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim().toUpperCase().replace(/[^A-Z0-9]/g, "") || undefined),
   openingBalance: z.coerce.number().min(0).default(0),
   openingBalanceSide: z.enum(["DEBIT", "CREDIT"]),
   openingBalanceDate: z.coerce.date(),
@@ -33,6 +37,7 @@ function readParty(formData: FormData) {
     email: formData.get("email") || undefined,
     address: formData.get("address") || undefined,
     gstin: formData.get("gstin") || undefined,
+    invoicePrefix: formData.get("invoicePrefix") || undefined,
     openingBalance: formData.get("openingBalance") || 0,
     openingBalanceSide: formData.get("openingBalanceSide"),
     openingBalanceDate: formData.get("openingBalanceDate") || new Date().toISOString().slice(0, 10),
@@ -168,6 +173,7 @@ export async function importParties(
       email: row["Email"] || undefined,
       address: row["Address"] || undefined,
       gstin: row["GSTIN"] || undefined,
+      invoicePrefix: row["Invoice Prefix"]?.trim().toUpperCase().replace(/[^A-Z0-9]/g, "") || undefined,
       openingBalance,
       openingBalanceSide,
       openingBalanceDate,

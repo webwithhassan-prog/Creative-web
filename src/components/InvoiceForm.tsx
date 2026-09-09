@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Plus, Trash2 } from "lucide-react";
 import { inputClass, labelClass, btnPrimary, btnSecondary } from "@/lib/ui";
@@ -65,6 +65,7 @@ export function InvoiceForm({
   products,
   defaultPartyId,
   invoiceNo,
+  invoiceNoSuggestions,
   defaultTaxRate,
   defaults,
   submitLabel,
@@ -76,6 +77,7 @@ export function InvoiceForm({
   products: Product[];
   defaultPartyId?: string;
   invoiceNo: string;
+  invoiceNoSuggestions?: Record<string, string>;
   defaultTaxRate?: number;
   defaults?: InvoiceDefaults;
   submitLabel?: string;
@@ -87,6 +89,28 @@ export function InvoiceForm({
   const [kind, setKind] = useState<"NORMAL" | "RETURN">(defaults?.kind ?? "NORMAL");
   const [taxEnabled, setTaxEnabled] = useState(defaults ? defaults.taxRate !== null : false);
   const [taxRate, setTaxRate] = useState(String(defaults?.taxRate ?? defaultTaxRate ?? 18));
+
+  const initialPartyId = defaults?.partyId ?? defaultPartyId ?? "";
+  const [partyId, setPartyId] = useState(initialPartyId);
+  const [invoiceNoValue, setInvoiceNoValue] = useState(
+    () =>
+      defaults?.invoiceNo ??
+      (initialPartyId && invoiceNoSuggestions?.[initialPartyId]) ??
+      invoiceNo
+  );
+  const invoiceNoRef = useRef<HTMLInputElement>(null);
+
+  function handlePartyChange(id: string) {
+    setPartyId(id);
+    // Only auto-number on create — never overwrite an existing invoice's number.
+    if (!defaults) {
+      const suggestion = invoiceNoSuggestions?.[id];
+      if (suggestion) {
+        setInvoiceNoValue(suggestion);
+        requestAnimationFrame(() => invoiceNoRef.current?.select());
+      }
+    }
+  }
 
   const productMap = useMemo(
     () => new Map(products.map((p) => [p.id, p])),
@@ -169,7 +193,9 @@ export function InvoiceForm({
             id="invoiceNo"
             name="invoiceNo"
             required
-            defaultValue={defaults?.invoiceNo ?? invoiceNo}
+            ref={invoiceNoRef}
+            value={invoiceNoValue}
+            onChange={(e) => setInvoiceNoValue(e.target.value)}
             className={`${inputClass} tabular`}
           />
         </div>
@@ -194,7 +220,8 @@ export function InvoiceForm({
             id="partyId"
             name="partyId"
             required
-            defaultValue={defaults?.partyId ?? defaultPartyId ?? ""}
+            value={partyId}
+            onChange={(e) => handlePartyChange(e.target.value)}
             className={inputClass}
           >
             <option value="" disabled>

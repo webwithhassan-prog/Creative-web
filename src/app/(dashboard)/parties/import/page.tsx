@@ -9,6 +9,7 @@ const COLUMNS = [
   { name: "Email", required: false, description: "" },
   { name: "Address", required: false, description: "" },
   { name: "GSTIN", required: false, description: "Tax registration number" },
+  { name: "Invoice Prefix", required: false, description: "Short code for auto-numbering, e.g. BC" },
   { name: "Opening Balance", required: false, description: "Number, defaults to 0" },
   { name: "Opening Balance Side", required: false, description: "DEBIT or CREDIT, defaults to CREDIT" },
   { name: "Opening Balance Date", required: false, description: "YYYY-MM-DD, defaults to today" },

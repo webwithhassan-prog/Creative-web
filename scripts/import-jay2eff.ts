@@ -14,6 +14,7 @@ const prisma = new PrismaClient();
 
 const COMPANY_NAME = "Process Links Internationals";
 const PARTY_NAME = "Jay 2 Eff Enterprises";
+const INVOICE_PREFIX = "JTF";
 
 type InvoiceRow = { date: string; refNo: string; kind: "NORMAL" | "RETURN"; amount: number };
 type PaymentRow = { date: string; amount: number; method: string; reference: string | null };
@@ -80,14 +81,17 @@ async function main() {
             openingBalanceDate: new Date("2024-11-29"),
             notes:
               "Imported from Jay 2 Eff Enterprises' Customer Statement (Account No. NGST43). Their Sale Invoices/Credits/Receipts are mirrored here as our Purchase Invoices/Returns/Payments.",
+            invoicePrefix: INVOICE_PREFIX,
           },
         }));
 
+      let seq = 1;
       for (const row of invoices) {
+        const invoiceNo = `${INVOICE_PREFIX}-${String(seq++).padStart(3, "0")}`;
         await tx.purchaseInvoice.create({
           data: {
             companyId: company.id,
-            invoiceNo: row.refNo,
+            invoiceNo,
             date: new Date(row.date),
             partyId: party.id,
             kind: row.kind,
@@ -95,6 +99,7 @@ async function main() {
             taxRate: null,
             taxAmount: 0,
             totalAmount: row.amount,
+            notes: `Supplier ref: ${row.refNo}`,
             items: {
               create: [
                 {

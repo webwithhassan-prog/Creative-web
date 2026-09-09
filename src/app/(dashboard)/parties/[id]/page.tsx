@@ -133,6 +133,8 @@ export default async function PartyLedgerPage({
             <dd className="text-ink">{party.address || "—"}</dd>
             <dt className="text-ink-soft">GSTIN</dt>
             <dd className="text-ink">{party.gstin || "—"}</dd>
+            <dt className="text-ink-soft">Invoice Code</dt>
+            <dd className="text-ink">{party.invoicePrefix || "—"}</dd>
             <dt className="text-ink-soft">Notes</dt>
             <dd className="text-ink">{party.notes || "—"}</dd>
           </dl>

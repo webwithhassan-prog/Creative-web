@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { inputClass, labelClass, btnPrimary, btnSecondary } from "@/lib/ui";
 import type { FormState } from "@/app/(dashboard)/parties/actions";
 import Link from "next/link";
@@ -12,11 +12,23 @@ type Defaults = {
   email?: string | null;
   address?: string | null;
   gstin?: string | null;
+  invoicePrefix?: string | null;
   openingBalance?: number;
   openingBalanceSide?: "DEBIT" | "CREDIT";
   openingBalanceDate?: string;
   notes?: string | null;
 };
+
+// Suggests a short invoice-numbering code from the account name, e.g.
+// "Nadeem Aftab Sb" -> "NAS", "Beta Chemicals" -> "BC".
+function suggestInvoicePrefix(name: string): string {
+  const letters = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => (/^[A-Za-z]/.test(w) ? w[0].toUpperCase() : ""))
+    .join("");
+  return letters.slice(0, 4);
+}
 
 export function PartyForm({
   action,
@@ -30,6 +42,8 @@ export function PartyForm({
   lockType?: "SUPPLIER" | "CUSTOMER";
 }) {
   const [state, formAction, pending] = useActionState(action, {});
+  const [invoicePrefix, setInvoicePrefix] = useState(defaults?.invoicePrefix ?? "");
+  const prefixTouched = useRef(Boolean(defaults?.invoicePrefix));
 
   return (
     <form action={formAction} className="space-y-5">
@@ -65,9 +79,33 @@ export function PartyForm({
             name="name"
             required
             defaultValue={defaults?.name}
+            onChange={(e) => {
+              if (!prefixTouched.current) setInvoicePrefix(suggestInvoicePrefix(e.target.value));
+            }}
             className={inputClass}
             placeholder="e.g. Al-Karam Textiles"
           />
+        </div>
+
+        <div>
+          <label className={labelClass} htmlFor="invoicePrefix">
+            Invoice Code
+          </label>
+          <input
+            id="invoicePrefix"
+            name="invoicePrefix"
+            value={invoicePrefix}
+            onChange={(e) => {
+              prefixTouched.current = true;
+              setInvoicePrefix(e.target.value.toUpperCase());
+            }}
+            placeholder="e.g. BC, NAS"
+            maxLength={6}
+            className={`${inputClass} uppercase`}
+          />
+          <p className="mt-1 text-xs text-ink-soft">
+            Short code used to auto-number invoices for this account (e.g. BC-001, BC-002…).
+          </p>
         </div>
 
         <div>
